@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Photo Resizer & Application Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans antialiased flex flex-col justify-between relative">
+
+    <!-- Left Skyscraper Ad Slot (160x600 - High eCPM Desktop Margin Ad) -->
+    <div class="hidden xl:flex fixed left-4 top-1/2 -translate-y-1/2 w-40 h-[600px] bg-slate-100 border border-dashed border-slate-300 rounded-2xl items-center justify-center text-center text-[10px] text-slate-400 p-3 z-10 shadow-sm">
+        <span>Google AdSense Skyscraper (160x600) — High Desktop Viewability</span>
+    </div>
+
+    <!-- Right Skyscraper Ad Slot (160x600 - High eCPM Desktop Margin Ad) -->
+    <div class="hidden xl:flex fixed right-4 top-1/2 -translate-y-1/2 w-40 h-[600px] bg-slate-100 border border-dashed border-slate-300 rounded-2xl items-center justify-center text-center text-[10px] text-slate-400 p-3 z-10 shadow-sm">
+        <span>Google AdSense Skyscraper (160x600) — High Desktop Viewability</span>
+    </div>
+
+    <div class="max-w-5xl mx-auto p-6 md:p-10 w-full">
+        <!-- Corporate Header -->
+        <header class="text-center mb-6 border-b border-slate-200 pb-6">
+            <div class="inline-block px-3 py-1 mb-3 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold tracking-wide uppercase border border-blue-100">
+                Enterprise & Global Imaging Utility
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">All In One Resize & Editor</h1>
+            <p class="text-slate-600 mt-2 max-w-2xl mx-auto text-sm">Secure, client-side image scaling and compression for official visa applications, e-commerce, and digital media standards.</p>
+        </header>
+
+        <!-- Top Ad Banner Slot (Above the Fold - Highest Impression Volume: 728x90 / Responsive) -->
+        <div class="mb-8 p-4 bg-slate-100 border border-dashed border-slate-300 rounded-2xl text-center text-xs text-slate-400 min-h-[90px] flex items-center justify-center shadow-sm">
+            <span>Google AdSense Header Banner (Above the Fold - 728x90 / Responsive)</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left Panel: Upload & Settings -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-900 mb-2 flex items-center justify-between">
+                        <span>1. Source Image</span>
+                        <span class="text-xs font-normal text-slate-400">JPG, PNG, WebP</span>
+                    </h2>
+
+                    <!-- Custom English File Upload Button -->
+                    <div class="relative">
+                        <input type="file" id="imageInput" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+                        <div class="w-full py-3 px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-sm rounded-xl border border-blue-100 flex items-center justify-center gap-2 cursor-pointer transition shadow-sm">
+                            <span>📁</span>
+                            <span>Choose Photo to Upload</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
+                        <span class="text-blue-600 text-sm">🔒</span>
+                        <p class="text-xs text-slate-600">100% Private: Processed locally in browser. Never stored or uploaded.</p>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div id="quickActions" class="mt-5 hidden grid grid-cols-2 gap-2">
+                        <button id="rotateBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium py-2 px-3 rounded-xl transition flex items-center justify-center gap-1 border border-slate-200">
+                            🔄 Rotate 90°
+                        </button>
+                        <button id="flipBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium py-2 px-3 rounded-xl transition flex items-center justify-center gap-1 border border-slate-200">
+                            🪞 Flip Horizontal
+                        </button>
+                    </div>
+
+                    <h2 class="text-lg font-semibold text-slate-900 mt-6 mb-3">2. Standard Template</h2>
+                    <div class="space-y-2 max-h-56 overflow-y-auto pr-1" id="templateList">
+                        <!-- Dynamic -->
+                    </div>
+
+                    <div id="customSettings" class="mt-4 hidden space-y-3">
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1">
+                                <label class="text-xs font-medium text-slate-600">Width (px)</label>
+                                <input type="number" id="customWidth" class="w-full mt-1 p-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900">
+                            </div>
+                            <button id="lockAspectBtn" class="mt-5 p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition border border-blue-100" title="Lock Aspect Ratio">
+                                🔗
+                            </button>
+                            <div class="flex-1">
+                                <label class="text-xs font-medium text-slate-600">Height (px)</label>
+                                <input type="number" id="customHeight" class="w-full mt-1 p-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-xs font-medium text-slate-600">Max File Size (KB)</label>
+                                <input type="number" id="customMaxKb" class="w-full mt-1 p-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-600">Export Format</label>
+                                <select id="formatSelect" class="w-full mt-1 p-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900">
+                                    <option value="image/jpeg">JPEG (.jpg)</option>
+                                    <option value="image/png">PNG (.png)</option>
+                                    <option value="image/webp">WebP (.webp)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex justify-between gap-2 pt-1">
+                            <button onclick="setPercentage(50)" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded-lg font-medium border border-slate-200">50%</button>
+                            <button onclick="setPercentage(75)" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded-lg font-medium border border-slate-200">75%</button>
+                            <button onclick="setPercentage(100)" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded-lg font-medium border border-slate-200">100%</button>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 space-y-3 border-t border-slate-200 pt-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-slate-700">Whiten / Brighten Background</span>
+                            <input type="checkbox" id="whiteBgCheck" class="w-5 h-5 text-blue-600 rounded bg-white border-slate-300 cursor-pointer">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-slate-700">Grayscale / Black & White</span>
+                            <input type="checkbox" id="grayscaleCheck" class="w-5 h-5 text-blue-600 rounded bg-white border-slate-300 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Medium Rectangle Ad Slot (300x250 - Highest CTR Placement) -->
+                <div class="mt-8 p-4 bg-slate-100 border border-dashed border-slate-300 rounded-xl text-center text-xs text-slate-400 min-h-[250px] flex items-center justify-center shadow-inner">
+                    <span>Google AdSense Medium Rectangle (300x250) — High CTR Action Area</span>
+                </div>
+            </div>
+
+            <!-- Right Panel: Preview & Download -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div class="w-full">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-4 text-center">Preview & Analysis</h2>
+                    <div class="w-full h-72 bg-slate-100 rounded-xl flex items-center justify-center overflow-hidden border border-slate-200 relative">
+                        <canvas id="outputCanvas" class="max-h-full max-w-full object-contain hidden"></canvas>
+                        <p id="placeholderText" class="text-slate-400 text-sm">No image selected</p>
+                    </div>
+
+                    <div id="statsBox" class="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 hidden">
+                        <p id="statsText" class="text-sm font-medium text-slate-700 text-center"></p>
+                    </div>
+                </div>
+
+                <div class="w-full mt-6 space-y-4">
+                    <button id="downloadBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 hidden shadow-sm">
+                        Download Processed Image
+                    </button>
+
+                    <!-- In-Feed / Native Download Ad Slot (High Intent Area) -->
+                    <div class="p-4 bg-slate-100 border border-dashed border-slate-300 rounded-xl text-center text-xs text-slate-400 min-h-[120px] flex items-center justify-center shadow-inner">
+                        <span>Google AdSense In-Feed / Native Ad (High Conversion Intent)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works Section -->
+        <section class="mt-16 border-t border-slate-200 pt-10">
+            <h2 class="text-2xl font-bold text-center text-slate-900 mb-8">How It Works</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-lg mx-auto mb-4 border border-blue-100">1</div>
+                    <h3 class="font-semibold text-slate-900 mb-2">Upload Photo</h3>
+                    <p class="text-sm text-slate-600">Select any image from your computer, phone, or tablet.</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-lg mx-auto mb-4 border border-blue-100">2</div>
+                    <h3 class="font-semibold text-slate-900 mb-2">Select Template</h3>
+                    <p class="text-sm text-slate-600">Choose from official Green Card, Schengen Visa, or social media presets.</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-lg mx-auto mb-4 border border-blue-100">3</div>
+                    <h3 class="font-semibold text-slate-900 mb-2">Download Instantly</h3>
+                    <p class="text-sm text-slate-600">Get your perfectly resized and compressed image in seconds.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="mt-16 border-t border-slate-200 pt-10 mb-6">
+            <h2 class="text-2xl font-bold text-center text-slate-900 mb-8">Frequently Asked Questions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-semibold text-slate-900 mb-2">Are my photos secure and private?</h3>
+                    <p class="text-sm text-slate-600">Yes! All image processing happens 100% locally in your browser. Your photos are never uploaded to any server.</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-semibold text-slate-900 mb-2">Is this service completely free?</h3>
+                    <p class="text-sm text-slate-600">Yes, Global Photo Resizer is 100% free with no hidden fees or watermarks.</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-semibold text-slate-900 mb-2">What is the Green Card photo size?</h3>
+                    <p class="text-sm text-slate-600">The official Green Card DV Lottery photo requirement is exactly 600 x 600 pixels in JPEG format, under 240 KB.</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-semibold text-slate-900 mb-2">Can I use this on my mobile phone?</h3>
+                    <p class="text-sm text-slate-600">Yes, our web application is fully responsive and works smoothly on iOS, Android, and desktop browsers.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer Ad Slot (Google AdSense Anchor / Footer Banner) -->
+        <div class="mt-10 p-4 bg-slate-100 border border-dashed border-slate-300 rounded-2xl text-center text-xs text-slate-400 min-h-[90px] flex items-center justify-center shadow-sm">
+            <span>Advertisement Space (Google AdSense Anchor / Footer Banner)</span>
+        </div>
+    </div>
+
+    <!-- Professional Corporate Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+        <div class="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p>&copy; 2026 All In One Resize. All rights reserved.</p>
+            <div class="flex items-center gap-6 font-medium text-slate-600">
+                <a href="javascript:void(0)" onclick="openModal('privacyModal')" class="hover:text-blue-600 transition">Privacy Policy</a>
+                <a href="javascript:void(0)" onclick="openModal('termsModal')" class="hover:text-blue-600 transition">Terms of Service</a>
+                <a href="https://mail.google.com/mail/?view=cm&fs=1&to=support@allinoneresize.com&su=Support%20Request%20-%20All%20In%20One%20Resize" target="_blank" class="hover:text-blue-600 transition">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Privacy Policy Modal -->
+    <div id="privacyModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl border border-slate-200 max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900">Privacy Policy</h3>
+                <button onclick="closeModal('privacyModal')" class="text-slate-400 hover:text-slate-700 text-lg font-bold">&times;</button>
+            </div>
+            <div class="text-sm text-slate-600 space-y-3">
+                <p><strong>Effective Date:</strong> January 2026</p>
+                <p><strong>All In One Resize</strong> ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how our web and mobile applications handle your information.</p>
+                <p><strong>1. Data Processing & Storage:</strong><br>All photo processing (resizing, cropping, filtering, and compression) occurs <strong>100% locally within your web browser or device</strong>. Your photos are <strong>never</strong> uploaded to our servers, stored, or shared with any third party. Once you close your browser or clear the app cache, your images disappear completely from the processing memory.</p>
+                <p><strong>2. Analytics & Cookies:</strong><br>We may use standard web analytics to understand traffic patterns and improve user experience. These tools do not collect personal photos or sensitive user data.</p>
+                <p><strong>3. Contact Us:</strong><br>If you have any questions about this Privacy Policy, please contact us through the <strong>Contact</strong> section.</p>
+            </div>
+            <div class="mt-6 text-right">
+                <button onclick="closeModal('privacyModal')" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms of Service Modal -->
+    <div id="termsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl border border-slate-200 max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900">Terms of Service</h3>
+                <button onclick="closeModal('termsModal')" class="text-slate-400 hover:text-slate-700 text-lg font-bold">&times;</button>
+            </div>
+            <div class="text-sm text-slate-600 space-y-3">
+                <p><strong>Effective Date:</strong> January 2026</p>
+                <p>By accessing or using <strong>All In One Resize</strong>, you agree to be bound by these Terms of Service.</p>
+                <p><strong>1. Use of Service:</strong><br>Our service is provided free of charge for personal and professional use (resizing photos for official applications, e-commerce, and social media). You agree not to use the service for any unlawful purposes.</p>
+                <p><strong>2. Disclaimer of Warranties:</strong><br>The service is provided on an <strong>"as is"</strong> and <strong>"as available"</strong> basis. While we ensure high accuracy for photo dimensions and file sizes (KB limits), users are solely responsible for verifying that their final resized photos meet the exact official submission requirements of third-party institutions (such as government portals or embassies).</p>
+                <p><strong>3. Limitation of Liability:</strong><br>All In One Resize shall not be held liable for any direct, indirect, or incidental damages resulting from the use or inability to use our tools.</p>
+                <p><strong>4. Contact Us:</strong><br>If you have any questions about these Terms of Service, please contact us through the <strong>Contact</strong> section.</p>
+            </div>
+            <div class="mt-6 text-right">
+                <button onclick="closeModal('termsModal')" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal(modalId) {
+            const el = document.getElementById(modalId);
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+        }
+        function closeModal(modalId) {
+            const el = document.getElementById(modalId);
+            el.classList.remove('flex');
+            el.classList.add('hidden');
+        }
+
+        const templates = [
+            { id: 'green_card', category: 'Official', title: 'Green Card Lottery (DV)', desc: '600x600 px • Max 240 KB • JPEG Only', badgeBg: 'bg-red-50 text-red-700 border-red-100', format: 'image/jpeg', w: 600, h: 600, kb: 240 },
+            { id: 'insta_post', category: 'Social Media', title: 'Instagram Post (Square)', desc: '1080x1080 px • 1:1 Ratio', badgeBg: 'bg-pink-50 text-pink-700 border-pink-100', format: 'image/jpeg', w: 1080, h: 1080, kb: 2048 },
+            { id: 'amazon_product', category: 'E-Commerce', title: 'Amazon Product Image', desc: '1000x1000 px • White BG', badgeBg: 'bg-amber-50 text-amber-700 border-amber-100', format: 'image/jpeg', w: 1000, h: 1000, kb: 1024 },
+            { id: 'insta_story', category: 'Social Media', title: 'Instagram / TikTok Story', desc: '1080x1920 px • 9:16 Ratio', badgeBg: 'bg-purple-50 text-purple-700 border-purple-100', format: 'image/jpeg', w: 1080, h: 1920, kb: 3072 },
+            { id: 'youtube_thumb', category: 'Social Media', title: 'YouTube Thumbnail / X', desc: '1280x720 px • 16:9 Ratio', badgeBg: 'bg-rose-50 text-rose-700 border-rose-100', format: 'image/jpeg', w: 1280, h: 720, kb: 1024 },
+            { id: 'etsy_product', category: 'E-Commerce', title: 'Etsy / Shopify Listing', desc: '2000x2000 px • High Res', badgeBg: 'bg-orange-50 text-orange-700 border-orange-100', format: 'image/jpeg', w: 2000, h: 2000, kb: 2048 },
+            { id: 'schengen_visa', category: 'Official', title: 'EU / Schengen Visa', desc: '413x531 px • Max 300 KB', badgeBg: 'bg-blue-50 text-blue-700 border-blue-100', format: 'image/jpeg', w: 413, h: 531, kb: 300 },
+            { id: 'uk_passport', category: 'Official', title: 'UK / International Passport', desc: '413x531 px • Max 300 KB', badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-100', format: 'image/jpeg', w: 413, h: 531, kb: 300 },
+            { id: 'passport', category: 'Official', title: 'Standard Passport / Visa', desc: '600x600 px • Max 200 KB', badgeBg: 'bg-slate-100 text-slate-700 border-slate-200', format: 'image/jpeg', w: 600, h: 600, kb: 200 },
+            { id: 'cv_photo', category: 'Professional', title: 'Job Application / CV', desc: '400x500 px • Max 500 KB', badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-100', format: 'image/jpeg', w: 400, h: 500, kb: 500 },
+            { id: 'profile_pic', category: 'Social Media', title: 'Profile Picture (General)', desc: '400x400 px • 1:1 Ratio', badgeBg: 'bg-cyan-50 text-cyan-700 border-cyan-100', format: 'image/jpeg', w: 400, h: 400, kb: 500 },
+            { id: 'custom', category: 'Custom', title: 'Custom Size / Free', desc: 'Set your own pixel & KB limit', badgeBg: 'bg-slate-100 text-slate-600 border-slate-200', format: 'image/jpeg', w: 500, h: 500, kb: 200 }
+        ];
+
+        let currentTemplate = templates[0];
+        let originalImage = null;
+        let rotationDegrees = 0;
+        let isFlippedH = false;
+        let isAspectLocked = true;
+
+        const templateListEl = document.getElementById('templateList');
+        const customSettingsEl = document.getElementById('customSettings');
+        const imageInput = document.getElementById('imageInput');
+        const outputCanvas = document.getElementById('outputCanvas');
+        const placeholderText = document.getElementById('placeholderText');
+        const statsBox = document.getElementById('statsBox');
+        const statsText = document.getElementById('statsText');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const whiteBgCheck = document.getElementById('whiteBgCheck');
+        const grayscaleCheck = document.getElementById('grayscaleCheck');
+        const formatSelect = document.getElementById('formatSelect');
+        const quickActions = document.getElementById('quickActions');
+        const lockAspectBtn = document.getElementById('lockAspectBtn');
+
+        function renderTemplates() {
+            templateListEl.innerHTML = '';
+            templates.forEach(t => {
+                const isSelected = currentTemplate.id === t.id;
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border cursor-pointer transition flex items-center justify-between ${isSelected ? 'border-blue-600 bg-blue-50/80 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50'}`;
+                div.innerHTML = `
+                    <div>
+                        <div class="font-semibold text-slate-900 text-xs">${t.title}</div>
+                        <div class="text-[11px] text-slate-500 mt-0.5">${t.desc}</div>
+                    </div>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md border ${t.badgeBg}">${t.category}</span>
+                `;
+                div.onclick = () => {
+                    currentTemplate = t;
+                    customSettingsEl.classList.toggle('hidden', t.id !== 'custom');
+                    if (t.id !== 'custom') {
+                        document.getElementById('customWidth').value = t.w;
+                        document.getElementById('customHeight').value = t.h;
+                        document.getElementById('customMaxKb').value = t.kb;
+                        formatSelect.value = t.format;
+                    }
+                    renderTemplates();
+                    processImage();
+                };
+                templateListEl.appendChild(div);
+            });
+        }
+
+        renderTemplates();
+
+        imageInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    rotationDegrees = 0;
+                    isFlippedH = false;
+                    placeholderText.classList.add('hidden');
+                    outputCanvas.classList.remove('hidden');
+                    statsBox.classList.remove('hidden');
+                    downloadBtn.classList.remove('hidden');
+                    quickActions.classList.remove('hidden');
+
+                    document.getElementById('customWidth').value = currentTemplate.w;
+                    document.getElementById('customHeight').value = currentTemplate.h;
+                    document.getElementById('customMaxKb').value = currentTemplate.kb;
+                    formatSelect.value = currentTemplate.format;
+
+                    processImage();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        document.getElementById('rotateBtn').onclick = () => {
+            rotationDegrees = (rotationDegrees + 90) % 360;
+            processImage();
+        };
+
+        document.getElementById('flipBtn').onclick = () => {
+            isFlippedH = !isFlippedH;
+            processImage();
+        };
+
+        lockAspectBtn.onclick = () => {
+            isAspectLocked = !isAspectLocked;
+            lockAspectBtn.className = `mt-5 p-2 rounded-lg transition border border-blue-100 ${isAspectLocked ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`;
+        };
+
+        const widthInput = document.getElementById('customWidth');
+        const heightInput = document.getElementById('customHeight');
+
+        widthInput.oninput = () => {
+            if (isAspectLocked && originalImage) {
+                const w = parseInt(widthInput.value) || 1;
+                const origW = rotationDegrees % 180 === 0 ? originalImage.width : originalImage.height;
+                const origH = rotationDegrees % 180 === 0 ? originalImage.height : originalImage.width;
+                const ratio = origH / origW;
+                heightInput.value = Math.round(w * ratio);
+            }
+            processImage();
+        };
+
+        heightInput.oninput = () => {
+            if (isAspectLocked && originalImage) {
+                const h = parseInt(heightInput.value) || 1;
+                const origW = rotationDegrees % 180 === 0 ? originalImage.width : originalImage.height;
+                const origH = rotationDegrees % 180 === 0 ? originalImage.height : originalImage.width;
+                const ratio = origW / origH;
+                widthInput.value = Math.round(h * ratio);
+            }
+            processImage();
+        };
+
+        function setPercentage(pct) {
+            if (!originalImage) return;
+            const origW = rotationDegrees % 180 === 0 ? originalImage.width : originalImage.height;
+            const origH = rotationDegrees % 180 === 0 ? originalImage.height : originalImage.width;
+            widthInput.value = Math.round(origW * (pct / 100));
+            heightInput.value = Math.round(origH * (pct / 100));
+            processImage();
+        }
+
+        whiteBgCheck.onchange = processImage;
+        grayscaleCheck.onchange = processImage;
+        formatSelect.onchange = processImage;
+        document.getElementById('customMaxKb').oninput = processImage;
+
+        function processImage() {
+            if (!originalImage) return;
+
+            const w = parseInt(widthInput.value) || currentTemplate.w;
+            const h = parseInt(heightInput.value) || currentTemplate.h;
+            const maxKb = parseInt(document.getElementById('customMaxKb').value) || currentTemplate.kb;
+            const mimeType = formatSelect.value;
+            const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
+
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+
+            if (rotationDegrees % 180 === 0) {
+                tempCanvas.width = originalImage.width;
+                tempCanvas.height = originalImage.height;
+            } else {
+                tempCanvas.width = originalImage.height;
+                tempCanvas.height = originalImage.width;
+            }
+
+            tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+            tempCtx.rotate((rotationDegrees * Math.PI) / 180);
+            if (isFlippedH) tempCtx.scale(-1, 1);
+            tempCtx.drawImage(originalImage, -originalImage.width / 2, -originalImage.height / 2);
+
+            outputCanvas.width = w;
+            outputCanvas.height = h;
+            const ctx = outputCanvas.getContext('2d');
+            ctx.drawImage(tempCanvas, 0, 0, w, h);
+
+            if (whiteBgCheck.checked) {
+                const imgData = ctx.getImageData(0, 0, w, h);
+                const data = imgData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i], g = data[i+1], b = data[i+2];
+                    if (r > 180 && g > 180 && b > 180) {
+                        data[i] = 255; data[i+1] = 255; data[i+2] = 255;
+                    } else {
+                        data[i] = Math.min(255, data[i] * 1.1);
+                        data[i+1] = Math.min(255, data[i+1] * 1.1);
+                        data[i+2] = Math.min(255, data[i+2] * 1.1);
+                    }
+                }
+                ctx.putImageData(imgData, 0, 0);
+            }
+
+            if (grayscaleCheck.checked) {
+                const imgData = ctx.getImageData(0, 0, w, h);
+                const data = imgData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i], g = data[i+1], b = data[i+2];
+                    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                    data[i] = gray; data[i+1] = gray; data[i+2] = gray;
+                }
+                ctx.putImageData(imgData, 0, 0);
+            }
+
+            let quality = 0.95;
+            let dataUrl = outputCanvas.toDataURL(mimeType, quality);
+            let sizeKb = Math.round((dataUrl.length * (3/4)) / 1024);
+
+            while (sizeKb > maxKb && quality > 0.1 && mimeType !== 'image/png') {
+                quality -= 0.05;
+                dataUrl = outputCanvas.toDataURL(mimeType, quality);
+                sizeKb = Math.round((dataUrl.length * (3/4)) / 1024);
+            }
+
+            const isOk = sizeKb <= maxKb;
+            statsText.innerHTML = `Size: <b>${w}x${h} px</b> | File Size: <b class="${isOk ? 'text-green-600' : 'text-red-600'}">${sizeKb} KB</b> (Max: ${maxKb} KB)`;
+
+            downloadBtn.onclick = () => {
+                const link = document.createElement('a');
+                link.download = `photo_${w}x${h}.${ext}`;
+                link.href = dataUrl;
+                link.click();
+            };
+        }
+    </script>
+</body>
+</html>
