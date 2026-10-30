@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Photo Resizer & Application Suite</title>
+    <title>All In One Resize - Global Photo Resizer & Application Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen font-sans antialiased flex flex-col justify-between relative">
@@ -197,7 +197,7 @@
         </section>
 
         <!-- Footer Ad Slot (Google AdSense Anchor / Footer Banner) -->
-        <div class="mt-10 p-4 bg-slate-100 border border-dashed border-slate-300 rounded-2xl text-center text-xs text-slate-400 min-h-[90px] flex items-center justify-center shadow-sm">
+        <div class="mt-10 p-4 bg-slate-100 border border-dashed border-slate-300 rounded-2xl text-center text-xs text-slate-400">
             <span>Advertisement Space (Google AdSense Anchor / Footer Banner)</span>
         </div>
     </div>
@@ -206,7 +206,7 @@
     <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
         <div class="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <p>&copy; 2026 All In One Resize. All rights reserved.</p>
-            <div class="flex items-center gap-6 font-medium text-slate-600">
+            <div class="flex items-center gap-4 font-medium text-slate-600">
                 <a href="javascript:void(0)" onclick="openModal('privacyModal')" class="hover:text-blue-600 transition">Privacy Policy</a>
                 <a href="javascript:void(0)" onclick="openModal('termsModal')" class="hover:text-blue-600 transition">Terms of Service</a>
                 <a href="https://mail.google.com/mail/?view=cm&fs=1&to=support@allinoneresize.com&su=Support%20Request%20-%20All%20In%20One%20Resize" target="_blank" class="hover:text-blue-600 transition">Contact</a>
@@ -345,7 +345,7 @@
                     isFlippedH = false;
                     placeholderText.classList.add('hidden');
                     outputCanvas.classList.remove('hidden');
-                    statsBox.classList.remove('hidden');
+                    statsBox.classList.add('hidden');
                     downloadBtn.classList.remove('hidden');
                     quickActions.classList.remove('hidden');
 
