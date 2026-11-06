@@ -195,14 +195,18 @@
         <div id="sectionSoundStudio" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
                 <div>
-                    <h2 class="text-lg font-semibold text-slate-900 mb-2">1. Custom Countdown FX Generator</h2>
-                    <p class="text-xs text-slate-500 mb-4">Generate custom retro countdown beeps (3, 2, 1, GO!) instantly using Web Audio API.</p>
+                    <h2 class="text-lg font-semibold text-slate-900 mb-2">1. Kid-Friendly Chime Countdown FX</h2>
+                    <p class="text-xs text-slate-500 mb-4">Generate soft, playful, child-engaging countdown chimes (3, 2, 1, GO!) instantly.</p>
 
-                    <button onclick="playCountdownBeep()" class="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 mb-4">
-                        <span>⏱️</span> <span>Play Countdown Beeps (3, 2, 1, GO!)</span>
+                    <button onclick="playKidFriendlyCountdown()" class="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 mb-3">
+                        <span>✨</span> <span>Play Playful Chime Countdown</span>
                     </button>
 
-                    <h2 class="text-lg font-semibold text-slate-900 mt-6 mb-2">2. Microphone Voiceover Recorder</h2>
+                    <button onclick="downloadCountdownWav()" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 mb-6">
+                        <span>📥</span> <span>Download Countdown Audio (.wav)</span>
+                    </button>
+
+                    <h2 class="text-lg font-semibold text-slate-900 mt-4 mb-2">2. Microphone Voiceover Recorder</h2>
                     <p class="text-xs text-slate-500 mb-4">Record your podcast voiceover directly in the browser.</p>
 
                     <div class="flex gap-2">
@@ -213,10 +217,6 @@
                             <span>⏹️</span> <span>Stop</span>
                         </button>
                     </div>
-                </div>
-
-                <div class="mt-8 p-4 bg-slate-100 border border-dashed border-slate-300 rounded-xl text-center text-xs text-slate-400 min-h-[120px] flex items-center justify-center shadow-inner">
-                    <span>Sound Studio AdSense Slot</span>
                 </div>
             </div>
 
@@ -280,36 +280,115 @@
             }
         }
 
-        // Web Audio API - Countdown Beep Synthesizer
-        function playCountdownBeep() {
+        // Kid-Friendly Chime Countdown Notes (C5, E5, G5, High C6)
+        const chimeNotes = [523.25, 659.25, 783.99, 1046.50];
+
+        function playKidFriendlyCountdown() {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             let time = audioCtx.currentTime;
 
-            // 3 Beeps (440 Hz)
-            for (let i = 0; i < 3; i++) {
+            chimeNotes.forEach((freq, index) => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(440, time + i);
-                gain.gain.setValueAtTime(0.5, time + i);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + i + 0.3);
+                osc.type = 'triangle'; // Soft, warm chime tone
+                osc.frequency.setValueAtTime(freq, time + index * 0.7);
+
+                gain.gain.setValueAtTime(0.01, time + index * 0.7);
+                gain.gain.linearRampToValueAtTime(0.4, time + index * 0.7 + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + index * 0.7 + 0.6);
+
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
-                osc.start(time + i);
-                osc.stop(time + i + 0.3);
+                osc.start(time + index * 0.7);
+                osc.stop(time + index * 0.7 + 0.6);
+            });
+        }
+
+        // Helper to generate WAV Blob from AudioBuffer
+        function audioBufferToWav(buffer) {
+            let numOfChan = buffer.numberOfChannels,
+                sampleRate = buffer.sampleRate,
+                format = 1, // PCM
+                bitDepth = 16,
+                bytesPerSample = bitDepth / 8,
+                blockAlign = numOfChan * bytesPerSample,
+                wavDataByteLength = buffer.length * blockAlign,
+                headerByteLength = 44,
+                totalByteLength = headerByteLength + wavDataByteLength,
+                wav = new DataView(new ArrayBuffer(totalByteLength)),
+                channelData = [],
+                offset = 0,
+                pos = 0;
+
+            function writeString(str) {
+                for (let i = 0; i < str.length; i++) {
+                    wav.setUint8(pos++, str.charCodeAt(i));
+                }
             }
 
-            // GO! Beep (880 Hz - higher pitch)
-            const oscGo = audioCtx.createOscillator();
-            const gainGo = audioCtx.createGain();
-            oscGo.type = 'sine';
-            oscGo.frequency.setValueAtTime(880, time + 3);
-            gainGo.gain.setValueAtTime(0.7, time + 3);
-            gainGo.gain.exponentialRampToValueAtTime(0.01, time + 3 + 0.6);
-            oscGo.connect(gainGo);
-            gainGo.connect(audioCtx.destination);
-            oscGo.start(time + 3);
-            oscGo.stop(time + 3 + 0.6);
+            writeString('RIFF');
+            wav.setUint32(pos, totalByteLength - 8, true); pos += 4;
+            writeString('WAVE');
+            writeString('fmt ');
+            wav.setUint32(pos, 16, true); pos += 4; // SubChunk1Size (16 for PCM)
+            wav.setUint16(pos, format, true); pos += 2;
+            wav.setUint16(pos, numOfChan, true); pos += 2;
+            wav.setUint32(pos, sampleRate, true); pos += 4;
+            wav.setUint32(pos, sampleRate * blockAlign, true); pos += 4;
+            wav.setUint16(pos, blockAlign, true); pos += 2;
+            wav.setUint16(pos, bitDepth, true); pos += 2;
+            writeString('data');
+            wav.setUint32(pos, wavDataByteLength, true); pos += 4;
+
+            for (let i = 0; i < buffer.numberOfChannels; i++) {
+                channelData.push(buffer.getChannelData(i));
+            }
+
+            while (offset < buffer.length) {
+                for (let i = 0; i < numOfChan; i++) {
+                    let sample = Math.max(-1, Math.min(1, channelData[i][offset]));
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767);
+                    wav.setInt16(pos, sample, true);
+                    pos += 2;
+                }
+                offset++;
+            }
+
+            return new Blob([wav.buffer], { type: 'audio/wav' });
+        }
+
+        function downloadCountdownWav() {
+            const sampleRate = 44100;
+            const duration = 3.5; // seconds
+            const offlineCtx = new OfflineAudioContext(1, sampleRate * duration, sampleRate);
+            let time = 0;
+
+            chimeNotes.forEach((freq, index) => {
+                const osc = offlineCtx.createOscillator();
+                const gain = offlineCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, time + index * 0.7);
+
+                gain.gain.setValueAtTime(0.01, time + index * 0.7);
+                gain.gain.linearRampToValueAtTime(0.4, time + index * 0.7 + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + index * 0.7 + 0.6);
+
+                osc.connect(gain);
+                gain.connect(offlineCtx.destination);
+                osc.start(time + index * 0.7);
+                osc.stop(time + index * 0.7 + 0.6);
+            });
+
+            offlineCtx.startRendering().then(renderedBuffer => {
+                const wavBlob = audioBufferToWav(renderedBuffer);
+                const url = URL.createObjectURL(wavBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'kid_friendly_countdown_chime.wav';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
         }
 
         // Voice Recorder Logic
@@ -362,7 +441,7 @@
             }
         }
 
-        // Photo Resizer & Slideshow scripts remain fully active here...
+        // Photo Resizer & Slideshow scripts
         const templates = [
             { id: 'green_card', category: 'Official', title: 'Green Card Lottery (DV)', desc: '600x600 px • Max 240 KB • JPEG Only', badgeBg: 'bg-red-50 text-red-700 border-red-100', format: 'image/jpeg', w: 600, h: 600, kb: 240 },
             { id: 'insta_post', category: 'Social Media', title: 'Instagram Post (Square)', desc: '1080x1080 px • 1:1 Ratio', badgeBg: 'bg-pink-50 text-pink-700 border-pink-100', format: 'image/jpeg', w: 1080, h: 1080, kb: 2048 },
@@ -384,7 +463,6 @@
         const statsText = document.getElementById('statsText');
         const downloadBtn = document.getElementById('downloadBtn');
         const whiteBgCheck = document.getElementById('whiteBgCheck');
-        const grayscaleCheck = document.getElementById('grayscaleCheck');
         const formatSelect = document.getElementById('formatSelect');
         const quickActions = document.getElementById('quickActions');
 
