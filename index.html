@@ -195,15 +195,15 @@
         <div id="sectionSoundStudio" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
                 <div>
-                    <h2 class="text-lg font-semibold text-slate-900 mb-2">1. Kid-Friendly Chime Countdown FX</h2>
-                    <p class="text-xs text-slate-500 mb-4">Generate soft, playful, child-engaging countdown chimes (3, 2, 1, GO!) instantly.</p>
+                    <h2 class="text-lg font-semibold text-slate-900 mb-2">1. Soft 3.50s Countdown FX Generator</h2>
+                    <p class="text-xs text-slate-500 mb-4">Generate smooth, ear-friendly, professional 3.50s countdown chimes instantly.</p>
 
-                    <button onclick="playKidFriendlyCountdown()" class="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 mb-3">
-                        <span>✨</span> <span>Play Playful Chime Countdown</span>
+                    <button onclick="playSoftCountdown()" class="w-full py-3 px-4 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 mb-3">
+                        <span>🎧</span> <span>Play Soft 3.50s Countdown</span>
                     </button>
 
-                    <button onclick="downloadCountdownWav()" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 mb-6">
-                        <span>📥</span> <span>Download Countdown Audio (.wav)</span>
+                    <button onclick="downloadCountdownWav()" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 mb-6">
+                        <span>📥</span> <span>Download 3.50s Countdown (.wav)</span>
                     </button>
 
                     <h2 class="text-lg font-semibold text-slate-900 mt-4 mb-2">2. Microphone Voiceover Recorder</h2>
@@ -280,27 +280,29 @@
             }
         }
 
-        // Kid-Friendly Chime Countdown Notes (C5, E5, G5, High C6)
-        const chimeNotes = [523.25, 659.25, 783.99, 1046.50];
+        // Soft 3.50s Countdown Tones (Harmonic Sine waves with gentle envelopes)
+        const softFrequencies = [440, 440, 440, 880]; // A4 and A5
+        const totalDuration = 3.50; // seconds
+        const intervalTime = totalDuration / 4; // ~0.875s per beat
 
-        function playKidFriendlyCountdown() {
+        function playSoftCountdown() {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             let time = audioCtx.currentTime;
 
-            chimeNotes.forEach((freq, index) => {
+            softFrequencies.forEach((freq, index) => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                osc.type = 'triangle'; // Soft, warm chime tone
-                osc.frequency.setValueAtTime(freq, time + index * 0.7);
+                osc.type = 'sine'; // Softest, ear-friendly wave
+                osc.frequency.setValueAtTime(freq, time + index * intervalTime);
 
-                gain.gain.setValueAtTime(0.01, time + index * 0.7);
-                gain.gain.linearRampToValueAtTime(0.4, time + index * 0.7 + 0.08);
-                gain.gain.exponentialRampToValueAtTime(0.001, time + index * 0.7 + 0.6);
+                gain.gain.setValueAtTime(0.001, time + index * intervalTime);
+                gain.gain.linearRampToValueAtTime(0.25, time + index * intervalTime + 0.05); // Smooth attack
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + index * intervalTime + 0.6); // Long smooth fade
 
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
-                osc.start(time + index * 0.7);
-                osc.stop(time + index * 0.7 + 0.6);
+                osc.start(time + index * intervalTime);
+                osc.stop(time + index * intervalTime + 0.6);
             });
         }
 
@@ -359,24 +361,24 @@
 
         function downloadCountdownWav() {
             const sampleRate = 44100;
-            const duration = 3.5; // seconds
+            const duration = totalDuration + 0.5; // ~4.0 seconds total buffer
             const offlineCtx = new OfflineAudioContext(1, sampleRate * duration, sampleRate);
             let time = 0;
 
-            chimeNotes.forEach((freq, index) => {
+            softFrequencies.forEach((freq, index) => {
                 const osc = offlineCtx.createOscillator();
                 const gain = offlineCtx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(freq, time + index * 0.7);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, time + index * intervalTime);
 
-                gain.gain.setValueAtTime(0.01, time + index * 0.7);
-                gain.gain.linearRampToValueAtTime(0.4, time + index * 0.7 + 0.08);
-                gain.gain.exponentialRampToValueAtTime(0.001, time + index * 0.7 + 0.6);
+                gain.gain.setValueAtTime(0.001, time + index * intervalTime);
+                gain.gain.linearRampToValueAtTime(0.25, time + index * intervalTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + index * intervalTime + 0.6);
 
                 osc.connect(gain);
                 gain.connect(offlineCtx.destination);
-                osc.start(time + index * 0.7);
-                osc.stop(time + index * 0.7 + 0.6);
+                osc.start(time + index * intervalTime);
+                osc.stop(time + index * intervalTime + 0.6);
             });
 
             offlineCtx.startRendering().then(renderedBuffer => {
@@ -384,7 +386,7 @@
                 const url = URL.createObjectURL(wavBlob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'kid_friendly_countdown_chime.wav';
+                a.download = 'soft_3.5s_countdown.wav';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
