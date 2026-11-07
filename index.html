@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All In One Resize & Creator Suite - Photo, Video & Sound Studio</title>
+    <title>All In One Resize & Creator Suite - Professional Q&A Video Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen font-sans antialiased flex flex-col justify-between relative">
@@ -25,7 +25,7 @@
                 Enterprise & Global Creator Studio
             </div>
             <h1 class="text-3xl font-bold tracking-tight text-slate-900">All In One Creator Suite</h1>
-            <p class="text-slate-600 mt-2 max-w-2xl mx-auto text-sm">Secure photo resizing, slideshow video generation, and browser-based sound effects & voiceover studio for YouTube creators.</p>
+            <p class="text-slate-600 mt-2 max-w-2xl mx-auto text-sm">Secure photo resizing, professional Q&A timeline editing, and browser-based sound effects & voiceover studio for YouTube creators.</p>
 
             <!-- Navigation Tabs -->
             <div class="flex flex-wrap justify-center gap-3 mt-6">
@@ -33,7 +33,7 @@
                     🖼️ Photo Resizer
                 </button>
                 <button onclick="switchTab('videoMaker')" id="tabVideoMaker" class="px-4 py-2.5 rounded-xl font-semibold text-sm transition bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200">
-                    🎬 Video Maker
+                    🎬 Professional Q&A Studio
                 </button>
                 <button onclick="switchTab('soundStudio')" id="tabSoundStudio" class="px-4 py-2.5 rounded-xl font-semibold text-sm transition bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200">
                     🎙️ Sound FX & Voice Studio
@@ -140,52 +140,119 @@
             </div>
         </div>
 
-        <!-- TAB 2: SLIDESHOW VIDEO MAKER -->
+        <!-- TAB 2: PROFESSIONAL Q&A SCENE STUDIO -->
         <div id="sectionVideoMaker" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
                 <div>
-                    <h2 class="text-lg font-semibold text-slate-900 mb-2">1. Upload Slideshow Images</h2>
-                    <div class="relative">
-                        <input type="file" id="slideshowImagesInput" accept="image/*" multiple class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
-                        <div class="w-full py-3 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-sm rounded-xl border border-emerald-100 flex items-center justify-center gap-2 cursor-pointer transition shadow-sm">
-                            <span>🖼️</span> <span>Choose Multiple Images</span>
+                    <h2 class="text-lg font-semibold text-slate-900 mb-1">🎬 Q&A Scene Studio (True MP4 Export)</h2>
+                    <p class="text-xs text-slate-500 mb-3">Upload questions & answers, batch apply durations, and auto-pair into scenes.</p>
+
+                    <!-- SUCCESS TOAST NOTIFICATION -->
+                    <div id="successToast" class="hidden mb-3 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between text-xs font-semibold shadow-sm animate-pulse">
+                        <span id="successToastText">🎉 Successfully Completed!</span>
+                        <button onclick="document.getElementById('successToast').classList.add('hidden')" class="text-emerald-700 hover:text-emerald-900 font-bold px-1">✕</button>
+                    </div>
+
+                    <!-- STEP 1: UPLOAD Q & A -->
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div>
+                            <label class="text-[11px] font-bold text-blue-700 block mb-1">❓ Questions (<span id="qCountLabel">0</span>)</label>
+                            <input type="file" id="qInput" accept="image/*" multiple class="hidden">
+                            <button onclick="document.getElementById('qInput').click()" class="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs rounded-xl border border-blue-100 transition">Upload Q's</button>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-emerald-700 block mb-1">💡 Answers (<span id="aCountLabel">0</span>)</label>
+                            <input type="file" id="aInput" accept="image/*" multiple class="hidden">
+                            <button onclick="document.getElementById('aInput').click()" class="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-xs rounded-xl border border-emerald-100 transition">Upload A's</button>
                         </div>
                     </div>
-                    <div id="selectedImagesCount" class="mt-3 text-xs font-medium text-slate-600">No images selected yet.</div>
 
-                    <h2 class="text-lg font-semibold text-slate-900 mt-6 mb-2">2. Background Audio / Voiceover</h2>
-                    <div class="relative mt-2">
-                        <input type="file" id="audioInput" accept="audio/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
-                        <div class="w-full py-3 px-4 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-sm rounded-xl border border-purple-100 flex items-center justify-center gap-2 cursor-pointer transition shadow-sm">
-                            <span>🎵</span> <span>Choose MP3 / Audio File</span>
+                    <!-- STEP 2: TRANSITION AUDIO -->
+                    <div class="mb-3 bg-purple-50/60 p-2.5 rounded-xl border border-purple-100">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-bold text-purple-900">⏱️ Audio Transition File (Plays 1 Time Per Pair)</label>
+                            <span id="audioDurationBadge" class="text-[10px] font-bold bg-purple-200 text-purple-800 px-1.5 py-0.5 rounded hidden">0.00s</span>
+                        </div>
+                        <input type="file" id="transitionAudioInput" accept="audio/*" class="hidden">
+                        <div class="flex items-center justify-between">
+                            <button onclick="document.getElementById('transitionAudioInput').click()" class="py-1.5 px-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-lg transition">Choose Audio File</button>
+                            <span id="transitionAudioName" class="text-xs text-purple-900 truncate ml-2">No audio</span>
+                        </div>
+                        <button onclick="syncDurationWithAudio()" id="syncAudioBtn" class="w-full mt-2 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-800 font-semibold text-[11px] rounded-lg transition hidden">⚡ Match Scene Timing to Audio Length</button>
+                    </div>
+
+                    <!-- STEP 3: BATCH TIMING CONTROLS -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3 space-y-2">
+                        <span class="text-xs font-bold text-slate-700 block">⚡ Batch Apply Duration to All Scenes</span>
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 flex items-center gap-1">
+                                <span class="text-[11px] text-blue-700 font-medium">Q Sec:</span>
+                                <input type="number" id="batchQSec" value="3.55" min="0.5" max="60" step="0.05" class="w-16 text-center text-xs p-1 border rounded bg-white">
+                                <button onclick="applyDurationToAll('q')" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-semibold transition">Apply All Q</button>
+                            </div>
+                            <div class="flex-1 flex items-center gap-1">
+                                <span class="text-[11px] text-emerald-700 font-medium">A Sec:</span>
+                                <input type="number" id="batchASec" value="3.55" min="0.5" max="60" step="0.05" class="w-16 text-center text-xs p-1 border rounded bg-white">
+                                <button onclick="applyDurationToAll('a')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-semibold transition">Apply All A</button>
+                            </div>
                         </div>
                     </div>
-                    <div id="selectedAudioName" class="mt-2 text-xs font-medium text-slate-600">No audio selected.</div>
 
-                    <div class="mt-6">
-                        <label class="text-xs font-medium text-slate-600">Duration per Image (seconds)</label>
-                        <input type="number" id="slideDuration" value="3" min="1" max="15" class="w-full mt-1 p-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900">
+                    <!-- AUTO-PAIR BUTTON -->
+                    <button onclick="autoPairScenes()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl transition shadow-sm mb-3 flex items-center justify-center gap-1.5">
+                        <span>🔗</span> <span>Auto-Pair Questions & Answers into Scenes</span>
+                    </button>
+
+                    <!-- SCENES TIMELINE LIST -->
+                    <h2 class="text-lg font-semibold text-slate-900 mb-1">🎞️ Scene Timeline (<span id="scenesCountLabel">0</span>)</h2>
+                    <div id="scenesContainer" class="space-y-2 max-h-44 overflow-y-auto pr-1 bg-slate-50 p-2 rounded-xl border border-slate-200 mb-2">
+                        <p class="text-center text-xs text-slate-400 py-4">No scenes created yet. Upload Q&A and click Auto-Pair.</p>
                     </div>
                 </div>
             </div>
 
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
                 <div>
-                    <h2 class="text-lg font-semibold text-slate-900 mb-4 text-center">Video Preview & Generator</h2>
-                    <div class="w-full h-72 bg-slate-900 rounded-xl flex items-center justify-center overflow-hidden border border-slate-200 relative">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-2 text-center">Video Preview & Timeline Scrubber</h2>
+                    <div class="w-full h-64 bg-slate-900 rounded-xl flex items-center justify-center overflow-hidden border border-slate-200 relative">
                         <canvas id="videoCanvas" class="max-h-full max-w-full object-contain"></canvas>
-                        <p id="videoPlaceholderText" class="text-slate-400 text-sm absolute">Upload images to preview</p>
+                        <p id="videoPlaceholderText" class="text-slate-400 text-sm absolute">Create scenes to preview</p>
                     </div>
-                    <div id="videoProgressBox" class="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 hidden text-center">
-                        <p id="videoProgressText" class="text-sm font-medium text-slate-700">Ready to generate video.</p>
+
+                    <!-- TIMELINE SCRUBBER -->
+                    <div class="mt-3 px-1">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[11px] font-medium text-slate-600">Timeline Scrubber (Drag to Scrub)</span>
+                            <div class="text-[11px] font-mono text-indigo-600 font-bold"><span id="currentTimeLabel">0.00s</span> / <span id="totalTimeLabel">0.00s</span></div>
+                        </div>
+                        <input type="range" id="timelineScrubber" min="0" max="100" value="0" step="0.1" oninput="onTimelineScrub(this.value)" class="w-full accent-indigo-600 cursor-pointer" disabled>
+                    </div>
+
+                    <!-- LIVE PREVIEW PLAY BUTTON -->
+                    <div class="mt-3 flex items-center justify-center gap-3">
+                        <button onclick="togglePreviewPlay()" id="previewPlayBtn" class="py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl transition shadow-sm flex items-center gap-2">
+                            <span>▶️</span> <span id="previewPlayText">Play Live Preview</span>
+                        </button>
+                    </div>
+
+                    <!-- DETAILED EXPORT PROGRESS BAR & STATS -->
+                    <div id="videoProgressBox" class="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 hidden">
+                        <p id="videoProgressText" class="text-xs font-semibold text-slate-800 mb-1.5 text-center">Preparing video export...</p>
+                        <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                            <div id="videoProgressBar" class="bg-emerald-600 h-2.5 rounded-full transition-all duration-75" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-slate-600 mt-1 font-medium">
+                            <span id="videoProgressPercent">0%</span>
+                            <span id="videoTimeRemaining">Calculating time...</span>
+                        </div>
                     </div>
                 </div>
-                <div class="w-full mt-6 space-y-4">
+                <div class="w-full mt-4 space-y-3">
                     <button id="generateVideoBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 shadow-sm flex items-center justify-center gap-2">
-                        <span>🎬</span> <span>Generate & Export Slideshow Video</span>
+                        <span>🎬</span> <span>Generate & Export True MP4 Video</span>
                     </button>
                     <a id="downloadVideoLink" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 hidden shadow-sm text-center block">
-                        📥 Download Video (.webm)
+                        📥 Download True MP4 Video (.mp4)
                     </a>
                 </div>
             </div>
@@ -280,10 +347,10 @@
             }
         }
 
-        // Soft 3.50s Countdown Tones (Harmonic Sine waves with gentle envelopes)
-        const softFrequencies = [440, 440, 440, 880]; // A4 and A5
-        const totalDuration = 3.50; // seconds
-        const intervalTime = totalDuration / 4; // ~0.875s per beat
+        // Soft 3.50s Countdown Tones
+        const softFrequencies = [440, 440, 440, 880];
+        const totalDuration = 3.50;
+        const intervalTime = totalDuration / 4;
 
         function playSoftCountdown() {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -292,12 +359,12 @@
             softFrequencies.forEach((freq, index) => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                osc.type = 'sine'; // Softest, ear-friendly wave
+                osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, time + index * intervalTime);
 
                 gain.gain.setValueAtTime(0.001, time + index * intervalTime);
-                gain.gain.linearRampToValueAtTime(0.25, time + index * intervalTime + 0.05); // Smooth attack
-                gain.gain.exponentialRampToValueAtTime(0.0001, time + index * intervalTime + 0.6); // Long smooth fade
+                gain.gain.linearRampToValueAtTime(0.25, time + index * intervalTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + index * intervalTime + 0.6);
 
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
@@ -306,11 +373,10 @@
             });
         }
 
-        // Helper to generate WAV Blob from AudioBuffer
         function audioBufferToWav(buffer) {
             let numOfChan = buffer.numberOfChannels,
                 sampleRate = buffer.sampleRate,
-                format = 1, // PCM
+                format = 1,
                 bitDepth = 16,
                 bytesPerSample = bitDepth / 8,
                 blockAlign = numOfChan * bytesPerSample,
@@ -332,7 +398,7 @@
             wav.setUint32(pos, totalByteLength - 8, true); pos += 4;
             writeString('WAVE');
             writeString('fmt ');
-            wav.setUint32(pos, 16, true); pos += 4; // SubChunk1Size (16 for PCM)
+            wav.setUint32(pos, 16, true); pos += 4;
             wav.setUint16(pos, format, true); pos += 2;
             wav.setUint16(pos, numOfChan, true); pos += 2;
             wav.setUint32(pos, sampleRate, true); pos += 4;
@@ -361,7 +427,7 @@
 
         function downloadCountdownWav() {
             const sampleRate = 44100;
-            const duration = totalDuration + 0.5; // ~4.0 seconds total buffer
+            const duration = totalDuration + 0.5;
             const offlineCtx = new OfflineAudioContext(1, sampleRate * duration, sampleRate);
             let time = 0;
 
@@ -443,7 +509,7 @@
             }
         }
 
-        // Photo Resizer & Slideshow scripts
+        // Photo Resizer scripts
         const templates = [
             { id: 'green_card', category: 'Official', title: 'Green Card Lottery (DV)', desc: '600x600 px • Max 240 KB • JPEG Only', badgeBg: 'bg-red-50 text-red-700 border-red-100', format: 'image/jpeg', w: 600, h: 600, kb: 240 },
             { id: 'insta_post', category: 'Social Media', title: 'Instagram Post (Square)', desc: '1080x1080 px • 1:1 Ratio', badgeBg: 'bg-pink-50 text-pink-700 border-pink-100', format: 'image/jpeg', w: 1080, h: 1080, kb: 2048 },
@@ -591,111 +657,529 @@
             };
         }
 
-        // Slideshow JS
-        let slideshowImages = [];
-        let selectedAudioFile = null;
-        const slideshowImagesInput = document.getElementById('slideshowImagesInput');
-        const selectedImagesCount = document.getElementById('selectedImagesCount');
-        const audioInput = document.getElementById('audioInput');
-        const selectedAudioName = document.getElementById('selectedAudioName');
+        // Q&A Scene Studio JS
+        let questionsLibrary = [];
+        let answersLibrary = [];
+        let transitionAudioFile = null;
+        let transitionAudioDuration = 3.55;
+        let scenes = [];
+
+        const qInput = document.getElementById('qInput');
+        const aInput = document.getElementById('aInput');
+        const transitionAudioInput = document.getElementById('transitionAudioInput');
+        const qCountLabel = document.getElementById('qCountLabel');
+        const aCountLabel = document.getElementById('aCountLabel');
+        const transitionAudioName = document.getElementById('transitionAudioName');
+        const audioDurationBadge = document.getElementById('audioDurationBadge');
+        const syncAudioBtn = document.getElementById('syncAudioBtn');
+        const scenesContainer = document.getElementById('scenesContainer');
+        const scenesCountLabel = document.getElementById('scenesCountLabel');
+
+        const timelineScrubber = document.getElementById('timelineScrubber');
+        const currentTimeLabel = document.getElementById('currentTimeLabel');
+        const totalTimeLabel = document.getElementById('totalTimeLabel');
+
+        const previewPlayBtn = document.getElementById('previewPlayBtn');
+        const previewPlayText = document.getElementById('previewPlayText');
+        let isPreviewPlaying = false;
+        let previewTimer = null;
+        let currentPreviewAudio = null;
+
         const generateVideoBtn = document.getElementById('generateVideoBtn');
         const downloadVideoLink = document.getElementById('downloadVideoLink');
         const videoCanvas = document.getElementById('videoCanvas');
         const videoPlaceholderText = document.getElementById('videoPlaceholderText');
+        const videoProgressBox = document.getElementById('videoProgressBox');
+        const videoProgressText = document.getElementById('videoProgressText');
+        const videoProgressBar = document.getElementById('videoProgressBar');
+        const videoProgressPercent = document.getElementById('videoProgressPercent');
+        const videoTimeRemaining = document.getElementById('videoTimeRemaining');
+        const successToast = document.getElementById('successToast');
+        const successToastText = document.getElementById('successToastText');
 
-        if (slideshowImagesInput) {
-            slideshowImagesInput.onchange = (e) => {
-                const files = Array.from(e.target.files);
-                if (files.length === 0) return;
-                slideshowImages = [];
-                let loadedCount = 0;
-                files.forEach((file, index) => {
+        if (qInput) {
+            qInput.onchange = (e) => {
+                let files = Array.from(e.target.files);
+                files.forEach(file => {
+                    const isDup = questionsLibrary.some(i => i.name === file.name && i.file.size === file.size);
+                    if (isDup) return;
                     const reader = new FileReader();
-                    reader.onload = (event) => {
+                    reader.onload = (ev) => {
                         const img = new Image();
                         img.onload = () => {
-                            slideshowImages[index] = img;
-                            loadedCount++;
-                            if (loadedCount === files.length) {
-                                selectedImagesCount.innerHTML = `✅ <b>${files.length} images loaded.</b>`;
-                                videoPlaceholderText.classList.add('hidden');
-                                drawSlidePreview(0);
-                            }
+                            questionsLibrary.push({ file: file, name: file.name, src: ev.target.result, img: img });
+                            questionsLibrary.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+                            qCountLabel.innerText = questionsLibrary.length;
                         };
-                        img.src = event.target.result;
+                        img.src = ev.target.result;
                     };
                     reader.readAsDataURL(file);
                 });
             };
         }
 
-        if (audioInput) {
-            audioInput.onchange = (e) => {
+        if (aInput) {
+            aInput.onchange = (e) => {
+                let files = Array.from(e.target.files);
+                files.forEach(file => {
+                    const isDup = answersLibrary.some(i => i.name === file.name && i.file.size === file.size);
+                    if (isDup) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            answersLibrary.push({ file: file, name: file.name, src: ev.target.result, img: img });
+                            answersLibrary.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+                            aCountLabel.innerText = answersLibrary.length;
+                        };
+                        img.src = ev.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+        }
+
+        if (transitionAudioInput) {
+            transitionAudioInput.onchange = (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    selectedAudioFile = file;
-                    selectedAudioName.innerHTML = `🎵 <b>${file.name}</b> selected.`;
+                    transitionAudioFile = file;
+                    transitionAudioName.innerText = file.name;
+
+                    const objectUrl = URL.createObjectURL(file);
+                    const audioElem = new Audio(objectUrl);
+                    audioElem.onloadedmetadata = () => {
+                        transitionAudioDuration = audioElem.duration;
+                        audioDurationBadge.innerText = `${transitionAudioDuration.toFixed(2)}s`;
+                        audioDurationBadge.classList.remove('hidden');
+                        syncAudioBtn.classList.remove('hidden');
+                        syncAudioBtn.innerText = `⚡ Match Scene Timing to Audio Length (${transitionAudioDuration.toFixed(2)}s)`;
+                    };
                 }
             };
         }
 
-        function drawSlidePreview(index) {
-            if (slideshowImages.length === 0) return;
+        function syncDurationWithAudio() {
+            if (!transitionAudioDuration) return;
+            const dur = parseFloat(transitionAudioDuration.toFixed(2));
+            document.getElementById('batchQSec').value = dur;
+            document.getElementById('batchASec').value = dur;
+            applyDurationToAll('q');
+            applyDurationToAll('a');
+            alert(`✅ Scene durations matched to audio length (${transitionAudioDuration.toFixed(2)}s)! Q: ${dur}s, A: ${dur}s`);
+        }
+
+        function autoPairScenes() {
+            if (questionsLibrary.length === 0 && answersLibrary.length === 0) {
+                alert('Please upload questions and answers first!');
+                return;
+            }
+
+            scenes = [];
+            const maxLen = Math.max(questionsLibrary.length, answersLibrary.length);
+            for (let i = 0; i < maxLen; i++) {
+                const q = questionsLibrary[i] || questionsLibrary[0];
+                const a = answersLibrary[i] || answersLibrary[0];
+                scenes.push({
+                    qItem: q,
+                    aItem: a,
+                    qDuration: parseFloat(document.getElementById('batchQSec').value) || 3.55,
+                    aDuration: parseFloat(document.getElementById('batchASec').value) || 3.55
+                });
+            }
+            renderScenes();
+        }
+
+        function applyDurationToAll(type) {
+            if (scenes.length === 0) {
+                alert('No scenes created yet! Please click Auto-Pair first.');
+                return;
+            }
+            const val = parseFloat(document.getElementById(type === 'q' ? 'batchQSec' : 'batchASec').value) || 3.55;
+            scenes.forEach(scene => {
+                if (type === 'q') scene.qDuration = Math.max(0.5, Math.min(60, val));
+                if (type === 'a') scene.aDuration = Math.max(0.5, Math.min(60, val));
+            });
+            renderScenes();
+        }
+
+        function updateSceneDuration(index, type, val) {
+            const v = parseFloat(val) || 0.5;
+            if (type === 'q') scenes[index].qDuration = Math.max(0.5, Math.min(60, v));
+            if (type === 'a') scenes[index].aDuration = Math.max(0.5, Math.min(60, v));
+            updateTimelineTotalTime();
+        }
+
+        function deleteScene(index) {
+            scenes.splice(index, 1);
+            renderScenes();
+        }
+
+        function getTotalTimelineDuration() {
+            let total = 0;
+            scenes.forEach(s => {
+                total += (parseFloat(s.qDuration) || 0) + (parseFloat(s.aDuration) || 0);
+            });
+            return total;
+        }
+
+        function updateTimelineTotalTime() {
+            const total = getTotalTimelineDuration();
+            totalTimeLabel.innerText = `${total.toFixed(2)}s`;
+            timelineScrubber.disabled = scenes.length === 0;
+        }
+
+        function renderScenes() {
+            scenesContainer.innerHTML = '';
+            scenesCountLabel.innerText = scenes.length;
+
+            if (scenes.length === 0) {
+                scenesContainer.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">No scenes created yet.</p>';
+                videoPlaceholderText.classList.remove('hidden');
+                timelineScrubber.disabled = true;
+                timelineScrubber.value = 0;
+                currentTimeLabel.innerText = '0.00s';
+                totalTimeLabel.innerText = '0.00s';
+                const ctx = videoCanvas.getContext('2d');
+                ctx.clearRect(0, 0, 1280, 720);
+                return;
+            }
+
+            videoPlaceholderText.classList.add('hidden');
+            updateTimelineTotalTime();
+
+            scenes.forEach((scene, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2 shadow-sm';
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded">#${index + 1}</span>
+                        <div class="flex items-center gap-1">
+                            <img src="${scene.qItem.src}" class="h-10 w-14 object-cover rounded border border-blue-200" title="Question: ${scene.qItem.name}">
+                            <span class="text-[10px] text-slate-400">➔</span>
+                            <img src="${scene.aItem.src}" class="h-10 w-14 object-cover rounded border border-emerald-200" title="Answer: ${scene.aItem.name}">
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs">
+                        <div>
+                            <span class="text-[10px] text-slate-500 block">Q Sec:</span>
+                            <input type="number" value="${scene.qDuration}" min="0.5" max="60" step="0.05" onchange="updateSceneDuration(${index}, 'q', this.value)" class="w-14 text-center p-0.5 border rounded">
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 block">A Sec:</span>
+                            <input type="number" value="${scene.aDuration}" min="0.5" max="60" step="0.05" onchange="updateSceneDuration(${index}, 'a', this.value)" class="w-14 text-center p-0.5 border rounded">
+                        </div>
+                        <button onclick="deleteScene(${index})" class="bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow ml-2">×</button>
+                    </div>
+                `;
+                scenesContainer.appendChild(div);
+            });
+
+            drawScenePreviewAtTime(0);
+        }
+
+        function drawImageOnCanvas(img) {
             const ctx = videoCanvas.getContext('2d');
             videoCanvas.width = 1280;
             videoCanvas.height = 720;
             ctx.fillStyle = '#0f172a';
             ctx.fillRect(0, 0, 1280, 720);
-            const img = slideshowImages[index % slideshowImages.length];
             const hRatio = 1280 / img.width;
             const vRatio = 720 / img.height;
             const ratio = Math.min(hRatio, vRatio);
             ctx.drawImage(img, 0, 0, img.width, img.height, (1280 - img.width * ratio) / 2, (720 - img.height * ratio) / 2, img.width * ratio, img.height * ratio);
         }
 
-        if (generateVideoBtn) {
-            generateVideoBtn.onclick = () => {
-                if (slideshowImages.length === 0) {
-                    alert('Please select at least one image first!');
+        function getSceneAndTypeAtTime(targetSec) {
+            let accumulated = 0;
+            for (let i = 0; i < scenes.length; i++) {
+                const qDur = parseFloat(scenes[i].qDuration) || 0;
+                const aDur = parseFloat(scenes[i].aDuration) || 0;
+
+                if (targetSec < accumulated + qDur) {
+                    return { sceneIndex: i, type: 'q' };
+                }
+                accumulated += qDur;
+
+                if (targetSec < accumulated + aDur) {
+                    return { sceneIndex: i, type: 'a' };
+                }
+                accumulated += aDur;
+            }
+            const last = scenes.length - 1;
+            return { sceneIndex: Math.max(0, last), type: 'a' };
+        }
+
+        function drawScenePreviewAtTime(targetSec) {
+            if (scenes.length === 0) return;
+            const info = getSceneAndTypeAtTime(targetSec);
+            const scene = scenes[info.sceneIndex];
+            const item = info.type === 'q' ? scene.qItem : scene.aItem;
+            drawImageOnCanvas(item.img);
+        }
+
+        // Timeline Scrubber Input Handler
+        function onTimelineScrub(val) {
+            if (isPreviewPlaying) stopPreviewPlay();
+            const total = getTotalTimelineDuration();
+            if (total <= 0) return;
+            const targetSec = (val / 100) * total;
+            currentTimeLabel.innerText = `${targetSec.toFixed(2)}s`;
+            drawScenePreviewAtTime(targetSec);
+        }
+
+        // Live Preview Play / Pause Toggle
+        function togglePreviewPlay() {
+            if (scenes.length === 0) {
+                alert('Please create at least one scene first!');
+                return;
+            }
+
+            if (isPreviewPlaying) {
+                stopPreviewPlay();
+            } else {
+                startPreviewPlay();
+            }
+        }
+
+        function playTransitionAudioOnce() {
+            if (!transitionAudioFile) return;
+            if (currentPreviewAudio) {
+                currentPreviewAudio.pause();
+                currentPreviewAudio = null;
+            }
+            currentPreviewAudio = new Audio(URL.createObjectURL(transitionAudioFile));
+            currentPreviewAudio.play().catch(e => {});
+        }
+
+        function startPreviewPlay() {
+            isPreviewPlaying = true;
+            previewPlayText.innerText = 'Pause Preview';
+            previewPlayBtn.className = "py-2 px-6 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-xl transition shadow-sm flex items-center gap-2";
+
+            let totalDurationSec = getTotalTimelineDuration();
+            let elapsedSec = 0;
+            const tickInterval = 0.05; // 50ms
+
+            drawScenePreviewAtTime(0);
+            playTransitionAudioOnce(); // Play audio for Scene 1 start
+
+            let lastTriggeredScene = -1;
+
+            function previewLoop() {
+                if (!isPreviewPlaying) return;
+                elapsedSec += tickInterval;
+                if (elapsedSec >= totalDurationSec) {
+                    stopPreviewPlay();
                     return;
                 }
-                alert('Slideshow video recording started! Once finished, download link will appear.');
-                const slideDurationSec = parseInt(document.getElementById('slideDuration').value) || 3;
-                const fps = 30;
-                const totalFrames = slideshowImages.length * slideDurationSec * fps;
-                let currentFrame = 0;
-                videoCanvas.width = 1280;
-                videoCanvas.height = 720;
-                const stream = videoCanvas.captureStream(fps);
-                let mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
-                let recordedChunks = [];
 
-                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-                    downloadVideoLink.href = url;
-                    downloadVideoLink.download = 'youtube_slideshow.webm';
-                    downloadVideoLink.classList.remove('hidden');
-                };
-                mediaRecorder.start();
+                const sliderVal = (elapsedSec / totalDurationSec) * 100;
+                timelineScrubber.value = sliderVal;
+                currentTimeLabel.innerText = `${elapsedSec.toFixed(2)}s`;
+                drawScenePreviewAtTime(elapsedSec);
 
-                let audioElement = null;
-                if (selectedAudioFile) {
-                    audioElement = new Audio(URL.createObjectURL(selectedAudioFile));
-                    audioElement.play();
+                let accumulated = 0;
+                for (let i = 0; i < scenes.length; i++) {
+                    const qDur = parseFloat(scenes[i].qDuration) || 0;
+                    const aDur = parseFloat(scenes[i].aDuration) || 0;
+
+                    if (Math.abs(elapsedSec - accumulated) < 0.04 && lastTriggeredScene !== i) {
+                        playTransitionAudioOnce();
+                        lastTriggeredScene = i;
+                        break;
+                    }
+                    accumulated += qDur + aDur;
                 }
 
-                const timer = setInterval(() => {
-                    const imageIndex = Math.floor((currentFrame / fps) / slideDurationSec) % slideshowImages.length;
-                    drawSlidePreview(imageIndex);
-                    currentFrame++;
-                    if (currentFrame >= totalFrames) {
-                        clearInterval(timer);
-                        if (audioElement) audioElement.pause();
-                        mediaRecorder.stop();
+                previewTimer = setTimeout(previewLoop, tickInterval * 1000);
+            }
+
+            previewLoop();
+        }
+
+        function stopPreviewPlay() {
+            isPreviewPlaying = false;
+            previewPlayText.innerText = 'Play Live Preview';
+            previewPlayBtn.className = "py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl transition shadow-sm flex items-center gap-2";
+
+            if (previewTimer) {
+                clearTimeout(previewTimer);
+                previewTimer = null;
+            }
+            if (currentPreviewAudio) {
+                currentPreviewAudio.pause();
+                currentPreviewAudio = null;
+            }
+
+            if (scenes.length > 0) {
+                drawScenePreviewAtTime(0);
+                timelineScrubber.value = 0;
+                currentTimeLabel.innerText = '0.00s';
+            }
+        }
+
+        // Professional Multi-Scene Video Export with True MP4 container support
+        if (generateVideoBtn) {
+            generateVideoBtn.onclick = async () => {
+                if (scenes.length === 0) {
+                    alert('Please create at least one scene first!');
+                    return;
+                }
+
+                if (isPreviewPlaying) stopPreviewPlay();
+
+                videoProgressBox.classList.remove('hidden');
+                videoProgressText.innerText = 'Preparing video export...';
+                videoProgressBar.style.width = '0%';
+                videoProgressPercent.innerText = '0%';
+                videoTimeRemaining.innerText = 'Calculating time...';
+                successToast.classList.add('hidden');
+                generateVideoBtn.disabled = true;
+
+                const fps = 30;
+                let totalFrames = 0;
+                scenes.forEach(scene => {
+                    totalFrames += Math.round(((parseFloat(scene.qDuration) || 3) + (parseFloat(scene.aDuration) || 3.55)) * fps);
+                });
+
+                videoCanvas.width = 1280;
+                videoCanvas.height = 720;
+                const videoStream = videoCanvas.captureStream(fps);
+                let combinedStream = videoStream;
+                let audioContext = null;
+
+                if (transitionAudioFile) {
+                    try {
+                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        if (audioContext.state === 'suspended') {
+                            await audioContext.resume();
+                        }
+                        const arrayBuffer = await transitionAudioFile.arrayBuffer();
+                        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+                        const destNode = audioContext.createMediaStreamDestination();
+                        const audioTrack = destNode.stream.getAudioTracks()[0];
+                        if (audioTrack) {
+                            combinedStream.addTrack(audioTrack);
+                        }
+
+                        let accumulatedSec = 0;
+                        scenes.forEach(scene => {
+                            const qSource = audioContext.createBufferSource();
+                            qSource.buffer = audioBuffer;
+                            qSource.connect(destNode);
+                            qSource.start(accumulatedSec);
+                            accumulatedSec += (parseFloat(scene.qDuration) || 3) + (parseFloat(scene.aDuration) || 3.55);
+                        });
+
+                    } catch (err) {
+                        console.error('Audio decoding error (skipped audio):', err);
                     }
-                }, 1000 / fps);
+                }
+
+                let mediaRecorder;
+                const mimeTypes = ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'];
+                let selectedMime = '';
+                for (let mime of mimeTypes) {
+                    if (MediaRecorder.isTypeSupported(mime)) {
+                        selectedMime = mime;
+                        break;
+                    }
+                }
+
+                try {
+                    mediaRecorder = selectedMime ? new MediaRecorder(combinedStream, { mimeType: selectedMime }) : new MediaRecorder(combinedStream);
+                } catch (e) {
+                    mediaRecorder = new MediaRecorder(combinedStream);
+                }
+
+                let recordedChunks = [];
+                mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: selectedMime || 'video/mp4' });
+                    const url = URL.createObjectURL(blob);
+                    downloadVideoLink.href = url;
+                    downloadVideoLink.download = 'qa_podcast_video.mp4';
+                    downloadVideoLink.classList.remove('hidden');
+
+                    videoProgressText.innerText = '✅ Export completed successfully!';
+                    videoProgressBar.style.width = '100%';
+                    videoProgressPercent.innerText = '100%';
+                    videoTimeRemaining.innerText = 'Completed (0s remaining)';
+                    generateVideoBtn.disabled = false;
+
+                    // Show Success Toast in English (auto-hide after 3.5 seconds)
+                    successToastText.innerText = '🎉 Success! Your Q&A video has been successfully exported as MP4 and is ready for download.';
+                    successToast.classList.remove('hidden');
+                    setTimeout(() => {
+                        successToast.classList.add('hidden');
+                    }, 3500);
+
+                    if (audioContext) audioContext.close();
+                };
+
+                mediaRecorder.onerror = (e) => {
+                    console.error('MediaRecorder error:', e);
+                    videoProgressText.innerText = '❌ Export error occurred. Please try again.';
+                    generateVideoBtn.disabled = false;
+                };
+
+                mediaRecorder.start(100);
+
+                function getSceneAndTypeAtExactSec(sec) {
+                    let accumulated = 0;
+                    for (let i = 0; i < scenes.length; i++) {
+                        const qDur = parseFloat(scenes[i].qDuration) || 0;
+                        const aDur = parseFloat(scenes[i].aDuration) || 0;
+
+                        if (sec < accumulated + qDur) {
+                            return { sceneIndex: i, type: 'q' };
+                        }
+                        accumulated += qDur;
+
+                        if (sec < accumulated + aDur) {
+                            return { sceneIndex: i, type: 'a' };
+                        }
+                        accumulated += aDur;
+                    }
+                    const last = scenes.length - 1;
+                    return { sceneIndex: Math.max(0, last), type: 'a' };
+                }
+
+                let currentFrame = 0;
+                const exportStartTime = performance.now();
+
+                function renderLoop() {
+                    if (currentFrame < totalFrames) {
+                        const currentSec = currentFrame / fps;
+                        const active = getSceneAndTypeAtExactSec(currentSec);
+                        drawScenePreview(active.sceneIndex, active.type);
+                        currentFrame++;
+
+                        const percent = Math.min(100, Math.round((currentFrame / totalFrames) * 100));
+                        const elapsedMs = performance.now() - exportStartTime;
+                        const avgMsPerFrame = elapsedMs / currentFrame;
+                        const remainingFrames = totalFrames - currentFrame;
+                        const remainingSec = Math.max(0, (remainingFrames * avgMsPerFrame) / 1000);
+
+                        videoProgressText.innerText = `Rendering MP4 video... (${currentFrame}/${totalFrames} frames)`;
+                        videoProgressBar.style.width = `${percent}%`;
+                        videoProgressPercent.innerText = `${percent}%`;
+                        videoTimeRemaining.innerText = `Remaining: ~${remainingSec.toFixed(1)}s`;
+
+                        setTimeout(renderLoop, 1);
+                    } else {
+                        setTimeout(() => {
+                            if (mediaRecorder.state !== 'inactive') {
+                                mediaRecorder.stop();
+                            }
+                        }, 500);
+                    }
+                }
+
+                renderLoop();
             };
         }
     </script>
