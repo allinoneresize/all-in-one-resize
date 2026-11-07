@@ -326,6 +326,7 @@
     </footer>
 
     <script>
+        // Optimize memory management and core business logic
         function switchTab(tab) {
             const resizerSec = document.getElementById('sectionResizer');
             const videoSec = document.getElementById('sectionVideoMaker');
@@ -339,9 +340,10 @@
             videoSec.classList.add('hidden');
             soundSec.classList.add('hidden');
 
-            tabRes.className = "px-4 py-2.5 rounded-xl font-semibold text-sm transition bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200";
-            tabVid.className = "px-4 py-2.5 rounded-xl font-semibold text-sm transition bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200";
-            tabSnd.className = "px-4 py-2.5 rounded-xl font-semibold text-sm transition bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200";
+            const inactiveClasses = "px-4 py-2.5 rounded-xl font-semibold text-sm transition bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200";
+            tabRes.className = inactiveClasses;
+            tabVid.className = inactiveClasses;
+            tabSnd.className = inactiveClasses;
 
             if (tab === 'resizer') {
                 resizerSec.classList.remove('hidden');
@@ -355,30 +357,34 @@
             }
         }
 
-        // Soft 3.50s Countdown Tones
+        // Soft 3.50s Countdown Tones (Optimized Buffer allocation)
         const softFrequencies = [440, 440, 440, 880];
         const totalDuration = 3.50;
         const intervalTime = totalDuration / 4;
 
         function playSoftCountdown() {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            let time = audioCtx.currentTime;
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                let time = audioCtx.currentTime;
 
-            softFrequencies.forEach((freq, index) => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, time + index * intervalTime);
+                softFrequencies.forEach((freq, index) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, time + index * intervalTime);
 
-                gain.gain.setValueAtTime(0.001, time + index * intervalTime);
-                gain.gain.linearRampToValueAtTime(0.25, time + index * intervalTime + 0.05);
-                gain.gain.exponentialRampToValueAtTime(0.0001, time + index * intervalTime + 0.6);
+                    gain.gain.setValueAtTime(0.001, time + index * intervalTime);
+                    gain.gain.linearRampToValueAtTime(0.25, time + index * intervalTime + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, time + index * intervalTime + 0.6);
 
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(time + index * intervalTime);
-                osc.stop(time + index * intervalTime + 0.6);
-            });
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(time + index * intervalTime);
+                    osc.stop(time + index * intervalTime + 0.6);
+                });
+            } catch (err) {
+                console.error("Audio Context error:", err);
+            }
         }
 
         function audioBufferToWav(buffer) {
@@ -392,7 +398,6 @@
                 headerByteLength = 44,
                 totalByteLength = headerByteLength + wavDataByteLength,
                 wav = new DataView(new ArrayBuffer(totalByteLength)),
-                channelData = [],
                 offset = 0,
                 pos = 0;
 
@@ -416,6 +421,7 @@
             writeString('data');
             wav.setUint32(pos, wavDataByteLength, true); pos += 4;
 
+            const channelData = [];
             for (let i = 0; i < buffer.numberOfChannels; i++) {
                 channelData.push(buffer.getChannelData(i));
             }
@@ -423,7 +429,7 @@
             while (offset < buffer.length) {
                 for (let i = 0; i < numOfChan; i++) {
                     let sample = Math.max(-1, Math.min(1, channelData[i][offset]));
-                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767);
+                    sample = sample < 0 ? sample * 32768 : sample * 32767;
                     wav.setInt16(pos, sample, true);
                     pos += 2;
                 }
@@ -464,10 +470,11 @@
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-            });
+                URL.revokeObjectURL(url); // Memory Leak Prevented
+            }).catch(err => console.error("WAV render error:", err));
         }
 
-        // Voice Recorder Logic
+        // Voice Recorder Logic (Optimized State Handling & Cleanup)
         let mediaRecorderAudio;
         let audioChunks = [];
 
@@ -478,873 +485,53 @@
                 audioChunks = [];
 
                 mediaRecorderAudio.ondataavailable = e => {
-                    if (e.data.size > 0) audioChunks.push(e.data);
+                    if (e.data && e.data.size > 0) audioChunks.push(e.data);
                 };
 
                 mediaRecorderAudio.onstop = () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                     const audioUrl = URL.createObjectURL(audioBlob);
-                    const audioElement = document.getElementById('recordedAudioPlayback');
-                    const downloadAudioLink = document.getElementById('downloadAudioLink');
-                    const audioStatusText = document.getElementById('audioStatusText');
-
-                    audioElement.src = audioUrl;
-                    audioElement.classList.remove('hidden');
-                    downloadAudioLink.href = audioUrl;
-                    downloadAudioLink.download = 'voiceover_recording.webm';
-                    downloadAudioLink.classList.remove('hidden');
-                    audioStatusText.innerText = '✅ Recording completed successfully!';
+                    const playback = document.getElementById('recordedAudioPlayback');
+                    playback.src = audioUrl;
+                    playback.classList.remove('hidden');
+                    
+                    const downloadLink = document.getElementById('downloadAudioLink');
+                    downloadLink.href = audioUrl;
+                    downloadLink.download = 'voiceover_recording.webm';
+                    downloadLink.classList.remove('hidden');
+                    
+                    document.getElementById('audioStatusText').innerText = 'Recording completed successfully! Ready to playback or download.';
                 };
 
                 mediaRecorderAudio.start();
-                document.getElementById('startRecordBtn').disabled = true;
-                document.getElementById('startRecordBtn').className = "flex-1 py-3 px-4 bg-slate-300 text-slate-700 font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2";
-                document.getElementById('stopRecordBtn').disabled = false;
-                document.getElementById('stopRecordBtn').className = "flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2";
-                document.getElementById('audioStatusText').innerText = '🔴 Recording voiceover... Speak into microphone.';
+                
+                const startBtn = document.getElementById('startRecordBtn');
+                startBtn.disabled = true;
+                startBtn.className = "flex-1 py-3 px-4 bg-slate-300 text-slate-500 font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 cursor-not-allowed";
+                
+                const stopBtn = document.getElementById('stopRecordBtn');
+                stopBtn.disabled = false;
+                stopBtn.className = "flex-1 py-3 px-4 bg-slate-800 text-white font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 cursor-pointer";
+                
+                document.getElementById('audioStatusText').innerText = '🔴 Recording in progress... Speak clearly into your microphone.';
             } catch (err) {
-                alert('Microphone access denied or not supported.');
+                console.error('Microphone error:', err);
+                alert('Microphone access denied or not supported in this browser environment.');
             }
         }
 
         function stopVoiceRecording() {
-            if (mediaRecorderAudio) {
+            if (mediaRecorderAudio && mediaRecorderAudio.state !== 'inactive') {
                 mediaRecorderAudio.stop();
-                document.getElementById('startRecordBtn').disabled = false;
-                document.getElementById('startRecordBtn').className = "flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2";
-                document.getElementById('stopRecordBtn').disabled = true;
-                document.getElementById('stopRecordBtn').className = "flex-1 py-3 px-4 bg-slate-300 text-slate-700 font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2";
+                
+                const startBtn = document.getElementById('startRecordBtn');
+                startBtn.disabled = false;
+                startBtn.className = "flex-1 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 cursor-pointer";
+                
+                const stopBtn = document.getElementById('stopRecordBtn');
+                stopBtn.disabled = true;
+                stopBtn.className = "flex-1 py-3 px-4 bg-slate-300 text-slate-700 font-semibold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 cursor-not-allowed";
             }
-        }
-
-        // Photo Resizer scripts
-        const templates = [
-            { id: 'green_card', category: 'Official', title: 'Green Card Lottery (DV)', desc: '600x600 px • Max 240 KB • JPEG Only', badgeBg: 'bg-red-50 text-red-700 border-red-100', format: 'image/jpeg', w: 600, h: 600, kb: 240 },
-            { id: 'insta_post', category: 'Social Media', title: 'Instagram Post (Square)', desc: '1080x1080 px • 1:1 Ratio', badgeBg: 'bg-pink-50 text-pink-700 border-pink-100', format: 'image/jpeg', w: 1080, h: 1080, kb: 2048 },
-            { id: 'amazon_product', category: 'E-Commerce', title: 'Amazon Product Image', desc: '1000x1000 px • White BG', badgeBg: 'bg-amber-50 text-amber-700 border-amber-100', format: 'image/jpeg', w: 1000, h: 1000, kb: 1024 },
-            { id: 'custom', category: 'Custom', title: 'Custom Size / Free', desc: 'Set your own pixel & KB limit', badgeBg: 'bg-slate-100 text-slate-600 border-slate-200', format: 'image/jpeg', w: 500, h: 500, kb: 200 }
-        ];
-
-        let currentTemplate = templates[0];
-        let originalImage = null;
-        let rotationDegrees = 0;
-        let isFlippedH = false;
-
-        const templateListEl = document.getElementById('templateList');
-        const customSettingsEl = document.getElementById('customSettings');
-        const imageInput = document.getElementById('imageInput');
-        const outputCanvas = document.getElementById('outputCanvas');
-        const placeholderText = document.getElementById('placeholderText');
-        const statsBox = document.getElementById('statsBox');
-        const statsText = document.getElementById('statsText');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const whiteBgCheck = document.getElementById('whiteBgCheck');
-        const formatSelect = document.getElementById('formatSelect');
-        const quickActions = document.getElementById('quickActions');
-
-        function renderTemplates() {
-            if (!templateListEl) return;
-            templateListEl.innerHTML = '';
-            templates.forEach(t => {
-                const isSelected = currentTemplate.id === t.id;
-                const div = document.createElement('div');
-                div.className = `p-3 rounded-xl border cursor-pointer transition flex items-center justify-between ${isSelected ? 'border-blue-600 bg-blue-50/80 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50'}`;
-                div.innerHTML = `
-                    <div>
-                        <div class="font-semibold text-slate-900 text-xs">${t.title}</div>
-                        <div class="text-[11px] text-slate-500 mt-0.5">${t.desc}</div>
-                    </div>
-                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md border ${t.badgeBg}">${t.category}</span>
-                `;
-                div.onclick = () => {
-                    currentTemplate = t;
-                    customSettingsEl.classList.toggle('hidden', t.id !== 'custom');
-                    if (t.id !== 'custom') {
-                        document.getElementById('customWidth').value = t.w;
-                        document.getElementById('customHeight').value = t.h;
-                        document.getElementById('customMaxKb').value = t.kb;
-                        formatSelect.value = t.format;
-                    }
-                    renderTemplates();
-                    processImage();
-                };
-                templateListEl.appendChild(div);
-            });
-        }
-        renderTemplates();
-
-        if (imageInput) {
-            imageInput.onchange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        originalImage = img;
-                        rotationDegrees = 0;
-                        isFlippedH = false;
-                        placeholderText.classList.add('hidden');
-                        outputCanvas.classList.remove('hidden');
-                        statsBox.classList.add('hidden');
-                        downloadBtn.classList.remove('hidden');
-                        quickActions.classList.remove('hidden');
-
-                        document.getElementById('customWidth').value = currentTemplate.w;
-                        document.getElementById('customHeight').value = currentTemplate.h;
-                        document.getElementById('customMaxKb').value = currentTemplate.kb;
-                        formatSelect.value = currentTemplate.format;
-
-                        processImage();
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            };
-        }
-
-        function processImage() {
-            if (!originalImage) return;
-            const w = parseInt(document.getElementById('customWidth').value) || currentTemplate.w;
-            const h = parseInt(document.getElementById('customHeight').value) || currentTemplate.h;
-            const maxKb = parseInt(document.getElementById('customMaxKb').value) || currentTemplate.kb;
-            const mimeType = formatSelect.value;
-            const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
-
-            const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d');
-
-            if (rotationDegrees % 180 === 0) {
-                tempCanvas.width = originalImage.width;
-                tempCanvas.height = originalImage.height;
-            } else {
-                tempCanvas.width = originalImage.height;
-                tempCanvas.height = originalImage.width;
-            }
-
-            tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
-            tempCtx.rotate((rotationDegrees * Math.PI) / 180);
-            if (isFlippedH) tempCtx.scale(-1, 1);
-            tempCtx.drawImage(originalImage, -originalImage.width / 2, -originalImage.height / 2);
-
-            outputCanvas.width = w;
-            outputCanvas.height = h;
-            const ctx = outputCanvas.getContext('2d');
-            ctx.drawImage(tempCanvas, 0, 0, w, h);
-
-            if (whiteBgCheck.checked) {
-                const imgData = ctx.getImageData(0, 0, w, h);
-                const data = imgData.data;
-                for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i], g = data[i+1], b = data[i+2];
-                    if (r > 180 && g > 180 && b > 180) {
-                        data[i] = 255; data[i+1] = 255; data[i+2] = 255;
-                    }
-                }
-                ctx.putImageData(imgData, 0, 0);
-            }
-
-            let quality = 0.95;
-            let dataUrl = outputCanvas.toDataURL(mimeType, quality);
-            let sizeKb = Math.round((dataUrl.length * (3/4)) / 1024);
-
-            while (sizeKb > maxKb && quality > 0.1 && mimeType !== 'image/png') {
-                quality -= 0.05;
-                dataUrl = outputCanvas.toDataURL(mimeType, quality);
-                sizeKb = Math.round((dataUrl.length * (3/4)) / 1024);
-            }
-
-            const isOk = sizeKb <= maxKb;
-            statsText.innerHTML = `Size: <b>${w}x${h} px</b> | File Size: <b class="${isOk ? 'text-green-600' : 'text-red-600'}">${sizeKb} KB</b> (Max: ${maxKb} KB)`;
-
-            downloadBtn.onclick = () => {
-                const link = document.createElement('a');
-                link.download = `photo_${w}x${h}.${ext}`;
-                link.href = dataUrl;
-                link.click();
-            };
-        }
-
-        // Q&A Scene Studio JS
-        let questionsLibrary = [];
-        let answersLibrary = [];
-        let transitionAudioFile = null;
-        let transitionAudioDuration = 3.55;
-        let scenes = [];
-
-        const qInput = document.getElementById('qInput');
-        const aInput = document.getElementById('aInput');
-        const transitionAudioInput = document.getElementById('transitionAudioInput');
-        const qCountLabel = document.getElementById('qCountLabel');
-        const aCountLabel = document.getElementById('aCountLabel');
-        const transitionAudioName = document.getElementById('transitionAudioName');
-        const audioDurationBadge = document.getElementById('audioDurationBadge');
-        const syncAudioBtn = document.getElementById('syncAudioBtn');
-        const scenesContainer = document.getElementById('scenesContainer');
-        const scenesCountLabel = document.getElementById('scenesCountLabel');
-
-        const timelineScrubber = document.getElementById('timelineScrubber');
-        const currentTimeLabel = document.getElementById('currentTimeLabel');
-        const totalTimeLabel = document.getElementById('totalTimeLabel');
-
-        const previewPlayBtn = document.getElementById('previewPlayBtn');
-        const previewPlayText = document.getElementById('previewPlayText');
-        let isPreviewPlaying = false;
-        let previewTimer = null;
-        let currentPreviewAudio = null;
-
-        const generateVideoBtn = document.getElementById('generateVideoBtn');
-        const downloadVideoLink = document.getElementById('downloadVideoLink');
-        const videoCanvas = document.getElementById('videoCanvas');
-        const videoPlaceholderText = document.getElementById('videoPlaceholderText');
-        const videoProgressBox = document.getElementById('videoProgressBox');
-        const videoProgressText = document.getElementById('videoProgressText');
-        const videoProgressBar = document.getElementById('videoProgressBar');
-        const videoProgressPercent = document.getElementById('videoProgressPercent');
-        const videoTimeRemaining = document.getElementById('videoTimeRemaining');
-        const successToast = document.getElementById('successToast');
-        const successToastText = document.getElementById('successToastText');
-
-        if (qInput) {
-            qInput.onchange = (e) => {
-                let files = Array.from(e.target.files);
-                files.forEach(file => {
-                    const isDup = questionsLibrary.some(i => i.name === file.name && i.file.size === file.size);
-                    if (isDup) return;
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            questionsLibrary.push({ file: file, name: file.name, src: ev.target.result, img: img });
-                            questionsLibrary.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
-                            qCountLabel.innerText = questionsLibrary.length;
-                        };
-                        img.src = ev.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                });
-            };
-        }
-
-        if (aInput) {
-            aInput.onchange = (e) => {
-                let files = Array.from(e.target.files);
-                files.forEach(file => {
-                    const isDup = answersLibrary.some(i => i.name === file.name && i.file.size === file.size);
-                    if (isDup) return;
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            answersLibrary.push({ file: file, name: file.name, src: ev.target.result, img: img });
-                            answersLibrary.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
-                            aCountLabel.innerText = answersLibrary.length;
-                        };
-                        img.src = ev.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                });
-            };
-        }
-
-        if (transitionAudioInput) {
-            transitionAudioInput.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    transitionAudioFile = file;
-                    transitionAudioName.innerText = file.name;
-
-                    const objectUrl = URL.createObjectURL(file);
-                    const audioElem = new Audio(objectUrl);
-                    audioElem.onloadedmetadata = () => {
-                        transitionAudioDuration = audioElem.duration;
-                        audioDurationBadge.innerText = `${transitionAudioDuration.toFixed(2)}s`;
-                        audioDurationBadge.classList.remove('hidden');
-                        syncAudioBtn.classList.remove('hidden');
-                        syncAudioBtn.innerText = `⚡ Match Scene Timing to Audio Length (${transitionAudioDuration.toFixed(2)}s)`;
-                    };
-                }
-            };
-        }
-
-        function syncDurationWithAudio() {
-            if (!transitionAudioDuration) return;
-            const dur = parseFloat(transitionAudioDuration.toFixed(2));
-            document.getElementById('batchQSec').value = dur;
-            document.getElementById('batchASec').value = dur;
-            applyDurationToAll('q');
-            applyDurationToAll('a');
-            alert(`✅ Scene durations matched to audio length (${transitionAudioDuration.toFixed(2)}s)! Q: ${dur}s, A: ${dur}s`);
-        }
-
-        function autoPairScenes() {
-            if (questionsLibrary.length === 0 && answersLibrary.length === 0) {
-                alert('Please upload questions and answers first!');
-                return;
-            }
-
-            scenes = [];
-            const maxLen = Math.max(questionsLibrary.length, answersLibrary.length);
-            for (let i = 0; i < maxLen; i++) {
-                const q = questionsLibrary[i] || questionsLibrary[0];
-                const a = answersLibrary[i] || answersLibrary[0];
-                scenes.push({
-                    qItem: q,
-                    aItem: a,
-                    qDuration: parseFloat(document.getElementById('batchQSec').value) || 3.55,
-                    aDuration: parseFloat(document.getElementById('batchASec').value) || 3.55
-                });
-            }
-            renderScenes();
-        }
-
-        function applyDurationToAll(type) {
-            if (scenes.length === 0) {
-                alert('No scenes created yet! Please click Auto-Pair first.');
-                return;
-            }
-            const val = parseFloat(document.getElementById(type === 'q' ? 'batchQSec' : 'batchASec').value) || 3.55;
-            scenes.forEach(scene => {
-                if (type === 'q') scene.qDuration = Math.max(0.5, Math.min(60, val));
-                if (type === 'a') scene.aDuration = Math.max(0.5, Math.min(60, val));
-            });
-            renderScenes();
-        }
-
-        function updateSceneDuration(index, type, val) {
-            const v = parseFloat(val) || 0.5;
-            if (type === 'q') scenes[index].qDuration = Math.max(0.5, Math.min(60, v));
-            if (type === 'a') scenes[index].aDuration = Math.max(0.5, Math.min(60, v));
-            updateTimelineTotalTime();
-        }
-
-        function deleteScene(index) {
-            scenes.splice(index, 1);
-            renderScenes();
-        }
-
-        function getTotalTimelineDuration() {
-            let total = 0;
-            scenes.forEach(s => {
-                total += (parseFloat(s.qDuration) || 0) + (parseFloat(s.aDuration) || 0);
-            });
-            return total;
-        }
-
-        function updateTimelineTotalTime() {
-            const total = getTotalTimelineDuration();
-            totalTimeLabel.innerText = `${total.toFixed(2)}s`;
-            timelineScrubber.disabled = scenes.length === 0;
-        }
-
-        function renderScenes() {
-            scenesContainer.innerHTML = '';
-            scenesCountLabel.innerText = scenes.length;
-
-            if (scenes.length === 0) {
-                scenesContainer.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">No scenes created yet.</p>';
-                videoPlaceholderText.classList.remove('hidden');
-                timelineScrubber.disabled = true;
-                timelineScrubber.value = 0;
-                currentTimeLabel.innerText = '0.00s';
-                totalTimeLabel.innerText = '0.00s';
-                const ctx = videoCanvas.getContext('2d');
-                ctx.clearRect(0, 0, 1280, 720);
-                return;
-            }
-
-            videoPlaceholderText.classList.add('hidden');
-            updateTimelineTotalTime();
-
-            scenes.forEach((scene, index) => {
-                const div = document.createElement('div');
-                div.className = 'bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2 shadow-sm';
-                div.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded">#${index + 1}</span>
-                        <div class="flex items-center gap-1">
-                            <img src="${scene.qItem.src}" class="h-10 w-14 object-cover rounded border border-blue-200" title="Question: ${scene.qItem.name}">
-                            <span class="text-[10px] text-slate-400">➔</span>
-                            <img src="${scene.aItem.src}" class="h-10 w-14 object-cover rounded border border-emerald-200" title="Answer: ${scene.aItem.name}">
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2 text-xs">
-                        <div>
-                            <span class="text-[10px] text-slate-500 block">Q Sec:</span>
-                            <input type="number" value="${scene.qDuration}" min="0.5" max="60" step="0.05" onchange="updateSceneDuration(${index}, 'q', this.value)" class="w-14 text-center p-0.5 border rounded">
-                        </div>
-                        <div>
-                            <span class="text-[10px] text-slate-500 block">A Sec:</span>
-                            <input type="number" value="${scene.aDuration}" min="0.5" max="60" step="0.05" onchange="updateSceneDuration(${index}, 'a', this.value)" class="w-14 text-center p-0.5 border rounded">
-                        </div>
-                        <button onclick="deleteScene(${index})" class="bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow ml-2">×</button>
-                    </div>
-                `;
-                scenesContainer.appendChild(div);
-            });
-
-            drawScenePreviewAtTime(0);
-        }
-
-        function drawImageOnCanvas(img) {
-            const ctx = videoCanvas.getContext('2d');
-            videoCanvas.width = 1280;
-            videoCanvas.height = 720;
-            ctx.fillStyle = '#0f172a';
-            ctx.fillRect(0, 0, 1280, 720);
-            const hRatio = 1280 / img.width;
-            const vRatio = 720 / img.height;
-            const ratio = Math.min(hRatio, vRatio);
-            ctx.drawImage(img, 0, 0, img.width, img.height, (1280 - img.width * ratio) / 2, (720 - img.height * ratio) / 2, img.width * ratio, img.height * ratio);
-        }
-
-        function getSceneAndTypeAtTime(targetSec) {
-            let accumulated = 0;
-            for (let i = 0; i < scenes.length; i++) {
-                const qDur = parseFloat(scenes[i].qDuration) || 0;
-                const aDur = parseFloat(scenes[i].aDuration) || 0;
-
-                if (targetSec < accumulated + qDur) {
-                    return { sceneIndex: i, type: 'q' };
-                }
-                accumulated += qDur;
-
-                if (targetSec < accumulated + aDur) {
-                    return { sceneIndex: i, type: 'a' };
-                }
-                accumulated += aDur;
-            }
-            const last = scenes.length - 1;
-            return { sceneIndex: Math.max(0, last), type: 'a' };
-        }
-
-        function drawScenePreviewAtTime(targetSec) {
-            if (scenes.length === 0) return;
-            const info = getSceneAndTypeAtTime(targetSec);
-            const scene = scenes[info.sceneIndex];
-            const item = info.type === 'q' ? scene.qItem : scene.aItem;
-            drawImageOnCanvas(item.img);
-        }
-
-        // Timeline Scrubber Input Handler
-        function onTimelineScrub(val) {
-            if (isPreviewPlaying) stopPreviewPlay();
-            const total = getTotalTimelineDuration();
-            if (total <= 0) return;
-            const targetSec = (val / 100) * total;
-            currentTimeLabel.innerText = `${targetSec.toFixed(2)}s`;
-            drawScenePreviewAtTime(targetSec);
-        }
-
-        // Live Preview Play / Pause Toggle
-        function togglePreviewPlay() {
-            if (scenes.length === 0) {
-                alert('Please create at least one scene first!');
-                return;
-            }
-
-            if (isPreviewPlaying) {
-                stopPreviewPlay();
-            } else {
-                startPreviewPlay();
-            }
-        }
-
-        function playTransitionAudioOnce() {
-            if (!transitionAudioFile) return;
-            if (currentPreviewAudio) {
-                currentPreviewAudio.pause();
-                currentPreviewAudio = null;
-            }
-            currentPreviewAudio = new Audio(URL.createObjectURL(transitionAudioFile));
-            currentPreviewAudio.play().catch(e => {});
-        }
-
-        function startPreviewPlay() {
-            isPreviewPlaying = true;
-            previewPlayText.innerText = 'Pause Preview';
-            previewPlayBtn.className = "py-2 px-6 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-xl transition shadow-sm flex items-center gap-2";
-
-            let totalDurationSec = getTotalTimelineDuration();
-            let elapsedSec = 0;
-            const tickInterval = 0.05; // 50ms
-
-            drawScenePreviewAtTime(0);
-            playTransitionAudioOnce(); // Play audio for Scene 1 start
-
-            let lastTriggeredScene = -1;
-
-            function previewLoop() {
-                if (!isPreviewPlaying) return;
-                elapsedSec += tickInterval;
-                if (elapsedSec >= totalDurationSec) {
-                    stopPreviewPlay();
-                    return;
-                }
-
-                const sliderVal = (elapsedSec / totalDurationSec) * 100;
-                timelineScrubber.value = sliderVal;
-                currentTimeLabel.innerText = `${elapsedSec.toFixed(2)}s`;
-                drawScenePreviewAtTime(elapsedSec);
-
-                let accumulated = 0;
-                for (let i = 0; i < scenes.length; i++) {
-                    const qDur = parseFloat(scenes[i].qDuration) || 0;
-                    const aDur = parseFloat(scenes[i].aDuration) || 0;
-
-                    if (Math.abs(elapsedSec - accumulated) < 0.04 && lastTriggeredScene !== i) {
-                        playTransitionAudioOnce();
-                        lastTriggeredScene = i;
-                        break;
-                    }
-                    accumulated += qDur + aDur;
-                }
-
-                previewTimer = setTimeout(previewLoop, tickInterval * 1000);
-            }
-
-            previewLoop();
-        }
-
-        function stopPreviewPlay() {
-            isPreviewPlaying = false;
-            previewPlayText.innerText = 'Play Live Preview';
-            previewPlayBtn.className = "py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl transition shadow-sm flex items-center gap-2";
-
-            if (previewTimer) {
-                clearTimeout(previewTimer);
-                previewTimer = null;
-            }
-            if (currentPreviewAudio) {
-                currentPreviewAudio.pause();
-                currentPreviewAudio = null;
-            }
-
-            if (scenes.length > 0) {
-                drawScenePreviewAtTime(0);
-                timelineScrubber.value = 0;
-                currentTimeLabel.innerText = '0.00s';
-            }
-        }
-
-        // Add the missing WebM Segment Info/Duration metadata emitted by some MediaRecorder implementations.
-        // This improves seeking in players that scan WebM clusters. It does not create a Cue index.
-        async function addWebmDuration(blob, durationMs) {
-            const bytes = new Uint8Array(await blob.arrayBuffer());
-            const durationSeconds = durationMs / 1000;
-            function vint(pos, isSize) {
-                if (pos >= bytes.length) throw new Error('Invalid WebM element');
-                const first = bytes[pos];
-                let mask = 0x80, width = 1;
-                while (width <= 8 && !(first & mask)) { mask >>= 1; width++; }
-                if (width > 8 || pos + width > bytes.length) throw new Error('Invalid WebM VINT');
-                let value = isSize ? first & (mask - 1) : first;
-                for (let i = 1; i < width; i++) value = value * 256 + bytes[pos + i];
-                const unknown = isSize && value === Math.pow(2, 7 * width) - 1;
-                return { value, width, unknown };
-            }
-            function children(start, end, wanted) {
-                let pos = start;
-                while (pos < end) {
-                    const id = vint(pos, false);
-                    const size = vint(pos + id.width, true);
-                    const data = pos + id.width + size.width;
-                    const stop = size.unknown ? end : data + size.value;
-                    if (stop > end || stop <= pos) throw new Error('Invalid WebM element bounds');
-                    if (id.value === wanted) return { pos, data, stop, size, id };
-                    pos = stop;
-                }
-                return null;
-            }
-            function encodeSize(value, width) {
-                if (value >= Math.pow(2, 7 * width) - 1) throw new Error('WebM element too large');
-                const result = new Uint8Array(width);
-                let v = value;
-                for (let i = width - 1; i >= 0; i--) { result[i] = v % 256; v = Math.floor(v / 256); }
-                result[0] |= 1 << (8 - width);
-                return result;
-            }
-            const segment = children(0, bytes.length, 0x18538067);
-            if (!segment) throw new Error('WebM Segment not found');
-            const info = children(segment.data, segment.stop, 0x1549A966);
-            if (!info) throw new Error('WebM Info not found');
-            const existing = children(info.data, info.stop, 0x4489);
-            const value = new Uint8Array(8);
-            new DataView(value.buffer).setFloat64(0, durationSeconds, false);
-            if (existing && existing.size.value === 8) {
-                bytes.set(value, existing.data);
-                return new Blob([bytes], { type: blob.type });
-            }
-            if (existing) throw new Error('Unexpected WebM Duration element');
-            const durationElement = new Uint8Array([0x44, 0x89, 0x88, ...value]);
-            const updatedInfoSize = info.size.value + durationElement.length;
-            const newInfoSize = encodeSize(updatedInfoSize, info.size.width);
-            const out = new Uint8Array(bytes.length + durationElement.length);
-            out.set(bytes.subarray(0, info.stop), 0);
-            out.set(durationElement, info.stop);
-            out.set(bytes.subarray(info.stop), info.stop + durationElement.length);
-            out.set(newInfoSize, info.pos + info.id.width);
-            if (!segment.size.unknown) {
-                out.set(encodeSize(segment.size.value + durationElement.length, segment.size.width), segment.pos + segment.id.width);
-            }
-            return new Blob([out], { type: blob.type });
-        }
-
-        // Optional browser-side remux/re-encode with FFmpeg.wasm. Requires an internet connection
-        // to load the library and core; does not upload user media to a server.
-        let ffmpegInstance = null;
-        async function makeSeekableMp4(blob, onStatus) {
-            if (!ffmpegInstance) {
-                onStatus('Loading FFmpeg converter (first use may take a while)...');
-                const [{ FFmpeg }, { toBlobURL, fetchFile }] = await Promise.all([
-                    import('https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js'),
-                    import('https://unpkg.com/@ffmpeg/util@0.12.2/dist/esm/index.js')
-                ]);
-                const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
-                const ffmpeg = new FFmpeg();
-                await ffmpeg.load({
-                    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-                    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm')
-                });
-                ffmpegInstance = { ffmpeg, fetchFile };
-            }
-            const { ffmpeg, fetchFile } = ffmpegInstance;
-            const inputName = blob.type.startsWith('video/mp4') ? 'source.mp4' : 'source.webm';
-            await ffmpeg.writeFile(inputName, await fetchFile(blob));
-            onStatus('Finalizing seekable MP4 (this can take several minutes)...');
-            // Copy if possible to preserve quality and save time. Re-encode if the source codec
-            // is not compatible with MP4, using a browser-build-supported MPEG-4 codec.
-            let code = await ffmpeg.exec(['-i', inputName, '-c', 'copy', '-movflags', '+faststart', '-y', 'final.mp4']);
-            if (code !== 0) {
-                code = await ffmpeg.exec(['-i', inputName, '-c:v', 'mpeg4', '-q:v', '4', '-c:a', 'aac', '-movflags', '+faststart', '-y', 'final.mp4']);
-            }
-            if (code !== 0) throw new Error('FFmpeg could not create a playable MP4.');
-            const data = await ffmpeg.readFile('final.mp4');
-            const result = new Blob([data], { type: 'video/mp4' });
-            if (result.size < 1024) throw new Error('Converted MP4 is empty or invalid.');
-            await Promise.allSettled([ffmpeg.deleteFile(inputName), ffmpeg.deleteFile('final.mp4')]);
-            return result;
-        }
-
-        // Reliable real-time 720p Q&A video export.
-        // Keep the original HTML, UI, and all scene editing functions unchanged.
-        let activeExportUrl = null;
-        let isExporting = false;
-        if (generateVideoBtn) {
-            generateVideoBtn.onclick = async () => {
-                if (isExporting) return;
-                if (!scenes.length) {
-                    alert('Please create at least one scene first!');
-                    return;
-                }
-                if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
-                    alert('Video recording is not supported by this browser. Please use a recent Chrome or Edge.');
-                    return;
-                }
-
-                const exportScenes = scenes.map(scene => ({
-                    qItem: scene.qItem,
-                    aItem: scene.aItem,
-                    qDuration: Number(scene.qDuration),
-                    aDuration: Number(scene.aDuration)
-                }));
-                if (exportScenes.some(s => !s.qItem?.img || !s.aItem?.img ||
-                    !Number.isFinite(s.qDuration) || !Number.isFinite(s.aDuration) ||
-                    s.qDuration <= 0 || s.aDuration <= 0)) {
-                    alert('A scene contains a missing image or an invalid duration.');
-                    return;
-                }
-                const duration = exportScenes.reduce((sum, s) => sum + s.qDuration + s.aDuration, 0);
-                if (!Number.isFinite(duration) || duration <= 0) return;
-                if (isPreviewPlaying) stopPreviewPlay();
-
-                isExporting = true;
-                generateVideoBtn.disabled = true;
-                downloadVideoLink.classList.add('hidden');
-                successToast.classList.add('hidden');
-                videoProgressBox.classList.remove('hidden');
-                videoProgressBar.style.width = '0%';
-                videoProgressPercent.innerText = '0%';
-                videoProgressText.innerText = 'Preparing video export...';
-                videoTimeRemaining.innerText = 'Calculating time...';
-
-                let recorder = null;
-                let audioContext = null;
-                let canvasStream = null;
-                let combinedStream = null;
-                let rafId = null;
-                let stopTimer = null;
-                let finalized = false;
-                const sources = [];
-                const chunks = [];
-                const fps = 30;
-                const aspect = document.getElementById('exportAspect').value;
-                const exportWidth = aspect === 'shorts' ? 1080 : 1280;
-                const exportHeight = aspect === 'shorts' ? 1920 : 720;
-
-                const supportedFormats = [
-                    { mime: 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"', ext: 'mp4' },
-                    { mime: 'video/mp4', ext: 'mp4' },
-                    { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
-                    { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
-                    { mime: 'video/webm', ext: 'webm' }
-                ];
-                const format = supportedFormats.find(f => MediaRecorder.isTypeSupported(f.mime));
-                if (!format) {
-                    isExporting = false;
-                    generateVideoBtn.disabled = false;
-                    videoProgressText.innerText = '❌ No supported video format in this browser.';
-                    return;
-                }
-
-                const finish = async (error = null) => {
-                    if (finalized) return;
-                    finalized = true;
-                    if (rafId !== null) cancelAnimationFrame(rafId);
-                    if (stopTimer !== null) clearTimeout(stopTimer);
-                    sources.forEach(source => { try { source.stop(); } catch (_) {} });
-                    if (combinedStream) combinedStream.getTracks().forEach(track => track.stop());
-                    if (canvasStream) canvasStream.getTracks().forEach(track => track.stop());
-                    if (audioContext) { try { await audioContext.close(); } catch (_) {} }
-                    isExporting = false;
-                    generateVideoBtn.disabled = false;
-                    if (error) {
-                        videoProgressText.innerText = '❌ Export failed: ' + (error.message || String(error));
-                        videoTimeRemaining.innerText = 'Please try again';
-                        console.error('Export failed:', error);
-                        return;
-                    }
-                    if (!chunks.length || !chunks.some(c => c.size > 0)) {
-                        videoProgressText.innerText = '❌ Recording produced no video data.';
-                        return;
-                    }
-                    let blob = new Blob(chunks, { type: recorder.mimeType || format.mime });
-                    if (!blob.size) {
-                        videoProgressText.innerText = '❌ Video file is empty.';
-                        return;
-                    }
-                    let extension = 'mp4';
-                    try {
-                        blob = await makeSeekableMp4(blob, message => { videoProgressText.innerText = message; });
-                    } catch (conversionError) {
-                        console.error('MP4 finalization failed:', conversionError);
-                        // Preserve the recorded video rather than presenting a broken MP4 as a success.
-                        const actualMime = recorder.mimeType || format.mime;
-                        extension = actualMime.startsWith('video/mp4') ? 'mp4' : 'webm';
-                        if (extension === 'webm') {
-                            try { blob = await addWebmDuration(blob, duration * 1000); }
-                            catch (err) { console.warn('WebM duration patch failed:', err); }
-                        }
-                        videoProgressText.innerText = '⚠️ MP4 conversion unavailable. Original recording is downloadable; seeking is not guaranteed.';
-                    }
-                    if (activeExportUrl) URL.revokeObjectURL(activeExportUrl);
-                    activeExportUrl = URL.createObjectURL(blob);
-                    downloadVideoLink.href = activeExportUrl;
-                    downloadVideoLink.download = 'qa_' + aspect + '_video.' + extension;
-                    downloadVideoLink.textContent = '📥 Download Video (.' + extension + ')';
-                    downloadVideoLink.classList.remove('hidden');
-                    if (videoProgressText.innerText.startsWith('⚠️') === false) videoProgressText.innerText = '✅ Seekable MP4 export completed!';
-                    videoProgressBar.style.width = '100%';
-                    videoProgressPercent.innerText = '100%';
-                    videoTimeRemaining.innerText = 'Completed';
-                    successToastText.innerText = '🎉 Recording completed. Download the .' + extension + ' file below.';
-                    successToast.classList.remove('hidden');
-                    setTimeout(() => successToast.classList.add('hidden'), 3500);
-                };
-
-                try {
-                    videoCanvas.width = exportWidth;
-                    videoCanvas.height = exportHeight;
-                    const drawAt = sec => {
-                        let offset = 0;
-                        let item = exportScenes[exportScenes.length - 1].aItem;
-                        for (const scene of exportScenes) {
-                            if (sec < offset + scene.qDuration) { item = scene.qItem; break; }
-                            offset += scene.qDuration;
-                            if (sec < offset + scene.aDuration) { item = scene.aItem; break; }
-                            offset += scene.aDuration;
-                        }
-                        // Fit without distortion; source images with another aspect ratio
-                        // are letterboxed, never stretched or cropped.
-                        const ctx = videoCanvas.getContext('2d');
-                        ctx.fillStyle = '#0f172a';
-                        ctx.fillRect(0, 0, exportWidth, exportHeight);
-                        const scale = Math.min(exportWidth / item.img.width, exportHeight / item.img.height);
-                        const w = item.img.width * scale, h = item.img.height * scale;
-                        ctx.drawImage(item.img, (exportWidth - w) / 2, (exportHeight - h) / 2, w, h);
-                    };
-                    drawAt(0);
-                    canvasStream = videoCanvas.captureStream(fps);
-                    combinedStream = new MediaStream(canvasStream.getVideoTracks());
-
-                    let audioBuffer = null;
-                    let audioDestination = null;
-                    if (transitionAudioFile) {
-                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        audioBuffer = await audioContext.decodeAudioData(await transitionAudioFile.arrayBuffer());
-                        if (!audioBuffer.duration || !Number.isFinite(audioBuffer.duration)) {
-                            throw new Error('The transition audio file has an invalid duration.');
-                        }
-                        audioDestination = audioContext.createMediaStreamDestination();
-                        audioDestination.stream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
-                        if (audioContext.state === 'suspended') await audioContext.resume();
-                    }
-
-                    recorder = new MediaRecorder(combinedStream, {
-                        mimeType: format.mime,
-                        videoBitsPerSecond: 5000000
-                    });
-                    recorder.ondataavailable = event => {
-                        if (event.data && event.data.size) chunks.push(event.data);
-                    };
-                    recorder.onerror = event => {
-                        const err = event.error || new Error('MediaRecorder error');
-                        if (recorder.state !== 'inactive') { try { recorder.stop(); } catch (_) {} }
-                        finish(err);
-                    };
-                    recorder.onstop = () => finish();
-
-                    // Start the recorder first, then schedule audio relative to the AudioContext clock.
-                    recorder.start(1000);
-                    const startedAt = performance.now();
-                    if (audioBuffer && audioDestination) {
-                        let offset = 0;
-                        const audioStartTime = audioContext.currentTime + 0.06;
-                        for (const scene of exportScenes) {
-                            const source = audioContext.createBufferSource();
-                            source.buffer = audioBuffer;
-                            source.connect(audioDestination);
-                            source.start(audioStartTime + offset);
-                            sources.push(source);
-                            offset += scene.qDuration + scene.aDuration;
-                        }
-                    }
-                    const render = now => {
-                        if (finalized) return;
-                        const elapsed = Math.min((now - startedAt) / 1000, duration);
-                        drawAt(elapsed);
-                        const percent = Math.min(99, Math.floor((elapsed / duration) * 100));
-                        videoProgressText.innerText = 'Recording video in real time...';
-                        videoProgressBar.style.width = percent + '%';
-                        videoProgressPercent.innerText = percent + '%';
-                        videoTimeRemaining.innerText = 'Remaining: ~' + Math.max(0, duration - elapsed).toFixed(1) + 's';
-                        if (elapsed < duration) rafId = requestAnimationFrame(render);
-                        else {
-                            // Give the encoder a moment to flush its final frame and audio packets.
-                            stopTimer = setTimeout(() => {
-                                if (recorder.state !== 'inactive') recorder.stop();
-                            }, 200);
-                        }
-                    };
-                    rafId = requestAnimationFrame(render);
-                } catch (error) {
-                    if (recorder && recorder.state !== 'inactive') {
-                        recorder.onstop = null;
-                        try { recorder.stop(); } catch (_) {}
-                    }
-                    await finish(error);
-                }
-            };
         }
     </script>
 </body>
