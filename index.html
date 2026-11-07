@@ -248,6 +248,14 @@
                     </div>
                 </div>
                 <div class="w-full mt-4 space-y-3">
+                    <div class="flex items-center gap-2 text-xs text-slate-700">
+                        <label for="exportAspect" class="font-semibold whitespace-nowrap">Video format:</label>
+                        <select id="exportAspect" class="flex-1 p-2 border border-slate-200 rounded-lg bg-white">
+                            <option value="shorts">YouTube Shorts — 1080×1920 (9:16)</option>
+                            <option value="landscape">YouTube Video — 1280×720 (16:9)</option>
+                        </select>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Export records in real time. For seekable MP4, online FFmpeg conversion is attempted after recording; first use downloads the converter (~30 MB).</p>
                     <button id="generateVideoBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-200 shadow-sm flex items-center justify-center gap-2">
                         <span>🎬</span> <span>Generate & Export True MP4 Video</span>
                     </button>
@@ -1019,167 +1027,323 @@
             }
         }
 
-        // Professional Multi-Scene Video Export with True MP4 container support
+        // Add the missing WebM Segment Info/Duration metadata emitted by some MediaRecorder implementations.
+        // This improves seeking in players that scan WebM clusters. It does not create a Cue index.
+        async function addWebmDuration(blob, durationMs) {
+            const bytes = new Uint8Array(await blob.arrayBuffer());
+            const durationSeconds = durationMs / 1000;
+            function vint(pos, isSize) {
+                if (pos >= bytes.length) throw new Error('Invalid WebM element');
+                const first = bytes[pos];
+                let mask = 0x80, width = 1;
+                while (width <= 8 && !(first & mask)) { mask >>= 1; width++; }
+                if (width > 8 || pos + width > bytes.length) throw new Error('Invalid WebM VINT');
+                let value = isSize ? first & (mask - 1) : first;
+                for (let i = 1; i < width; i++) value = value * 256 + bytes[pos + i];
+                const unknown = isSize && value === Math.pow(2, 7 * width) - 1;
+                return { value, width, unknown };
+            }
+            function children(start, end, wanted) {
+                let pos = start;
+                while (pos < end) {
+                    const id = vint(pos, false);
+                    const size = vint(pos + id.width, true);
+                    const data = pos + id.width + size.width;
+                    const stop = size.unknown ? end : data + size.value;
+                    if (stop > end || stop <= pos) throw new Error('Invalid WebM element bounds');
+                    if (id.value === wanted) return { pos, data, stop, size, id };
+                    pos = stop;
+                }
+                return null;
+            }
+            function encodeSize(value, width) {
+                if (value >= Math.pow(2, 7 * width) - 1) throw new Error('WebM element too large');
+                const result = new Uint8Array(width);
+                let v = value;
+                for (let i = width - 1; i >= 0; i--) { result[i] = v % 256; v = Math.floor(v / 256); }
+                result[0] |= 1 << (8 - width);
+                return result;
+            }
+            const segment = children(0, bytes.length, 0x18538067);
+            if (!segment) throw new Error('WebM Segment not found');
+            const info = children(segment.data, segment.stop, 0x1549A966);
+            if (!info) throw new Error('WebM Info not found');
+            const existing = children(info.data, info.stop, 0x4489);
+            const value = new Uint8Array(8);
+            new DataView(value.buffer).setFloat64(0, durationSeconds, false);
+            if (existing && existing.size.value === 8) {
+                bytes.set(value, existing.data);
+                return new Blob([bytes], { type: blob.type });
+            }
+            if (existing) throw new Error('Unexpected WebM Duration element');
+            const durationElement = new Uint8Array([0x44, 0x89, 0x88, ...value]);
+            const updatedInfoSize = info.size.value + durationElement.length;
+            const newInfoSize = encodeSize(updatedInfoSize, info.size.width);
+            const out = new Uint8Array(bytes.length + durationElement.length);
+            out.set(bytes.subarray(0, info.stop), 0);
+            out.set(durationElement, info.stop);
+            out.set(bytes.subarray(info.stop), info.stop + durationElement.length);
+            out.set(newInfoSize, info.pos + info.id.width);
+            if (!segment.size.unknown) {
+                out.set(encodeSize(segment.size.value + durationElement.length, segment.size.width), segment.pos + segment.id.width);
+            }
+            return new Blob([out], { type: blob.type });
+        }
+
+        // Optional browser-side remux/re-encode with FFmpeg.wasm. Requires an internet connection
+        // to load the library and core; does not upload user media to a server.
+        let ffmpegInstance = null;
+        async function makeSeekableMp4(blob, onStatus) {
+            if (!ffmpegInstance) {
+                onStatus('Loading FFmpeg converter (first use may take a while)...');
+                const [{ FFmpeg }, { toBlobURL, fetchFile }] = await Promise.all([
+                    import('https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js'),
+                    import('https://unpkg.com/@ffmpeg/util@0.12.2/dist/esm/index.js')
+                ]);
+                const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
+                const ffmpeg = new FFmpeg();
+                await ffmpeg.load({
+                    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm')
+                });
+                ffmpegInstance = { ffmpeg, fetchFile };
+            }
+            const { ffmpeg, fetchFile } = ffmpegInstance;
+            const inputName = blob.type.startsWith('video/mp4') ? 'source.mp4' : 'source.webm';
+            await ffmpeg.writeFile(inputName, await fetchFile(blob));
+            onStatus('Finalizing seekable MP4 (this can take several minutes)...');
+            // Copy if possible to preserve quality and save time. Re-encode if the source codec
+            // is not compatible with MP4, using a browser-build-supported MPEG-4 codec.
+            let code = await ffmpeg.exec(['-i', inputName, '-c', 'copy', '-movflags', '+faststart', '-y', 'final.mp4']);
+            if (code !== 0) {
+                code = await ffmpeg.exec(['-i', inputName, '-c:v', 'mpeg4', '-q:v', '4', '-c:a', 'aac', '-movflags', '+faststart', '-y', 'final.mp4']);
+            }
+            if (code !== 0) throw new Error('FFmpeg could not create a playable MP4.');
+            const data = await ffmpeg.readFile('final.mp4');
+            const result = new Blob([data], { type: 'video/mp4' });
+            if (result.size < 1024) throw new Error('Converted MP4 is empty or invalid.');
+            await Promise.allSettled([ffmpeg.deleteFile(inputName), ffmpeg.deleteFile('final.mp4')]);
+            return result;
+        }
+
+        // Reliable real-time 720p Q&A video export.
+        // Keep the original HTML, UI, and all scene editing functions unchanged.
+        let activeExportUrl = null;
+        let isExporting = false;
         if (generateVideoBtn) {
             generateVideoBtn.onclick = async () => {
-                if (scenes.length === 0) {
+                if (isExporting) return;
+                if (!scenes.length) {
                     alert('Please create at least one scene first!');
                     return;
                 }
+                if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
+                    alert('Video recording is not supported by this browser. Please use a recent Chrome or Edge.');
+                    return;
+                }
 
+                const exportScenes = scenes.map(scene => ({
+                    qItem: scene.qItem,
+                    aItem: scene.aItem,
+                    qDuration: Number(scene.qDuration),
+                    aDuration: Number(scene.aDuration)
+                }));
+                if (exportScenes.some(s => !s.qItem?.img || !s.aItem?.img ||
+                    !Number.isFinite(s.qDuration) || !Number.isFinite(s.aDuration) ||
+                    s.qDuration <= 0 || s.aDuration <= 0)) {
+                    alert('A scene contains a missing image or an invalid duration.');
+                    return;
+                }
+                const duration = exportScenes.reduce((sum, s) => sum + s.qDuration + s.aDuration, 0);
+                if (!Number.isFinite(duration) || duration <= 0) return;
                 if (isPreviewPlaying) stopPreviewPlay();
 
+                isExporting = true;
+                generateVideoBtn.disabled = true;
+                downloadVideoLink.classList.add('hidden');
+                successToast.classList.add('hidden');
                 videoProgressBox.classList.remove('hidden');
-                videoProgressText.innerText = 'Preparing video export...';
                 videoProgressBar.style.width = '0%';
                 videoProgressPercent.innerText = '0%';
+                videoProgressText.innerText = 'Preparing video export...';
                 videoTimeRemaining.innerText = 'Calculating time...';
-                successToast.classList.add('hidden');
-                generateVideoBtn.disabled = true;
 
-                const fps = 30;
-                let totalFrames = 0;
-                scenes.forEach(scene => {
-                    totalFrames += Math.round(((parseFloat(scene.qDuration) || 3) + (parseFloat(scene.aDuration) || 3.55)) * fps);
-                });
-
-                videoCanvas.width = 1280;
-                videoCanvas.height = 720;
-                const videoStream = videoCanvas.captureStream(fps);
-                let combinedStream = videoStream;
+                let recorder = null;
                 let audioContext = null;
+                let canvasStream = null;
+                let combinedStream = null;
+                let rafId = null;
+                let stopTimer = null;
+                let finalized = false;
+                const sources = [];
+                const chunks = [];
+                const fps = 30;
+                const aspect = document.getElementById('exportAspect').value;
+                const exportWidth = aspect === 'shorts' ? 1080 : 1280;
+                const exportHeight = aspect === 'shorts' ? 1920 : 720;
 
-                if (transitionAudioFile) {
+                const supportedFormats = [
+                    { mime: 'video/mp4;codecs="avc1.42E01E,mp4a.40.2"', ext: 'mp4' },
+                    { mime: 'video/mp4', ext: 'mp4' },
+                    { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+                    { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
+                    { mime: 'video/webm', ext: 'webm' }
+                ];
+                const format = supportedFormats.find(f => MediaRecorder.isTypeSupported(f.mime));
+                if (!format) {
+                    isExporting = false;
+                    generateVideoBtn.disabled = false;
+                    videoProgressText.innerText = '❌ No supported video format in this browser.';
+                    return;
+                }
+
+                const finish = async (error = null) => {
+                    if (finalized) return;
+                    finalized = true;
+                    if (rafId !== null) cancelAnimationFrame(rafId);
+                    if (stopTimer !== null) clearTimeout(stopTimer);
+                    sources.forEach(source => { try { source.stop(); } catch (_) {} });
+                    if (combinedStream) combinedStream.getTracks().forEach(track => track.stop());
+                    if (canvasStream) canvasStream.getTracks().forEach(track => track.stop());
+                    if (audioContext) { try { await audioContext.close(); } catch (_) {} }
+                    isExporting = false;
+                    generateVideoBtn.disabled = false;
+                    if (error) {
+                        videoProgressText.innerText = '❌ Export failed: ' + (error.message || String(error));
+                        videoTimeRemaining.innerText = 'Please try again';
+                        console.error('Export failed:', error);
+                        return;
+                    }
+                    if (!chunks.length || !chunks.some(c => c.size > 0)) {
+                        videoProgressText.innerText = '❌ Recording produced no video data.';
+                        return;
+                    }
+                    let blob = new Blob(chunks, { type: recorder.mimeType || format.mime });
+                    if (!blob.size) {
+                        videoProgressText.innerText = '❌ Video file is empty.';
+                        return;
+                    }
+                    let extension = 'mp4';
                     try {
-                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        if (audioContext.state === 'suspended') {
-                            await audioContext.resume();
+                        blob = await makeSeekableMp4(blob, message => { videoProgressText.innerText = message; });
+                    } catch (conversionError) {
+                        console.error('MP4 finalization failed:', conversionError);
+                        // Preserve the recorded video rather than presenting a broken MP4 as a success.
+                        const actualMime = recorder.mimeType || format.mime;
+                        extension = actualMime.startsWith('video/mp4') ? 'mp4' : 'webm';
+                        if (extension === 'webm') {
+                            try { blob = await addWebmDuration(blob, duration * 1000); }
+                            catch (err) { console.warn('WebM duration patch failed:', err); }
                         }
-                        const arrayBuffer = await transitionAudioFile.arrayBuffer();
-                        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-                        const destNode = audioContext.createMediaStreamDestination();
-                        const audioTrack = destNode.stream.getAudioTracks()[0];
-                        if (audioTrack) {
-                            combinedStream.addTrack(audioTrack);
-                        }
-
-                        let accumulatedSec = 0;
-                        scenes.forEach(scene => {
-                            const qSource = audioContext.createBufferSource();
-                            qSource.buffer = audioBuffer;
-                            qSource.connect(destNode);
-                            qSource.start(accumulatedSec);
-                            accumulatedSec += (parseFloat(scene.qDuration) || 3) + (parseFloat(scene.aDuration) || 3.55);
-                        });
-
-                    } catch (err) {
-                        console.error('Audio decoding error (skipped audio):', err);
+                        videoProgressText.innerText = '⚠️ MP4 conversion unavailable. Original recording is downloadable; seeking is not guaranteed.';
                     }
-                }
-
-                let mediaRecorder;
-                const mimeTypes = ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'];
-                let selectedMime = '';
-                for (let mime of mimeTypes) {
-                    if (MediaRecorder.isTypeSupported(mime)) {
-                        selectedMime = mime;
-                        break;
-                    }
-                }
-
-                try {
-                    mediaRecorder = selectedMime ? new MediaRecorder(combinedStream, { mimeType: selectedMime }) : new MediaRecorder(combinedStream);
-                } catch (e) {
-                    mediaRecorder = new MediaRecorder(combinedStream);
-                }
-
-                let recordedChunks = [];
-                mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
-
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(recordedChunks, { type: selectedMime || 'video/mp4' });
-                    const url = URL.createObjectURL(blob);
-                    downloadVideoLink.href = url;
-                    downloadVideoLink.download = 'qa_podcast_video.mp4';
+                    if (activeExportUrl) URL.revokeObjectURL(activeExportUrl);
+                    activeExportUrl = URL.createObjectURL(blob);
+                    downloadVideoLink.href = activeExportUrl;
+                    downloadVideoLink.download = 'qa_' + aspect + '_video.' + extension;
+                    downloadVideoLink.textContent = '📥 Download Video (.' + extension + ')';
                     downloadVideoLink.classList.remove('hidden');
-
-                    videoProgressText.innerText = '✅ Export completed successfully!';
+                    if (videoProgressText.innerText.startsWith('⚠️') === false) videoProgressText.innerText = '✅ Seekable MP4 export completed!';
                     videoProgressBar.style.width = '100%';
                     videoProgressPercent.innerText = '100%';
-                    videoTimeRemaining.innerText = 'Completed (0s remaining)';
-                    generateVideoBtn.disabled = false;
-
-                    // Show Success Toast in English (auto-hide after 3.5 seconds)
-                    successToastText.innerText = '🎉 Success! Your Q&A video has been successfully exported as MP4 and is ready for download.';
+                    videoTimeRemaining.innerText = 'Completed';
+                    successToastText.innerText = '🎉 Recording completed. Download the .' + extension + ' file below.';
                     successToast.classList.remove('hidden');
-                    setTimeout(() => {
-                        successToast.classList.add('hidden');
-                    }, 3500);
-
-                    if (audioContext) audioContext.close();
+                    setTimeout(() => successToast.classList.add('hidden'), 3500);
                 };
 
-                mediaRecorder.onerror = (e) => {
-                    console.error('MediaRecorder error:', e);
-                    videoProgressText.innerText = '❌ Export error occurred. Please try again.';
-                    generateVideoBtn.disabled = false;
-                };
-
-                mediaRecorder.start(100);
-
-                function getSceneAndTypeAtExactSec(sec) {
-                    let accumulated = 0;
-                    for (let i = 0; i < scenes.length; i++) {
-                        const qDur = parseFloat(scenes[i].qDuration) || 0;
-                        const aDur = parseFloat(scenes[i].aDuration) || 0;
-
-                        if (sec < accumulated + qDur) {
-                            return { sceneIndex: i, type: 'q' };
+                try {
+                    videoCanvas.width = exportWidth;
+                    videoCanvas.height = exportHeight;
+                    const drawAt = sec => {
+                        let offset = 0;
+                        let item = exportScenes[exportScenes.length - 1].aItem;
+                        for (const scene of exportScenes) {
+                            if (sec < offset + scene.qDuration) { item = scene.qItem; break; }
+                            offset += scene.qDuration;
+                            if (sec < offset + scene.aDuration) { item = scene.aItem; break; }
+                            offset += scene.aDuration;
                         }
-                        accumulated += qDur;
+                        // Fit without distortion; source images with another aspect ratio
+                        // are letterboxed, never stretched or cropped.
+                        const ctx = videoCanvas.getContext('2d');
+                        ctx.fillStyle = '#0f172a';
+                        ctx.fillRect(0, 0, exportWidth, exportHeight);
+                        const scale = Math.min(exportWidth / item.img.width, exportHeight / item.img.height);
+                        const w = item.img.width * scale, h = item.img.height * scale;
+                        ctx.drawImage(item.img, (exportWidth - w) / 2, (exportHeight - h) / 2, w, h);
+                    };
+                    drawAt(0);
+                    canvasStream = videoCanvas.captureStream(fps);
+                    combinedStream = new MediaStream(canvasStream.getVideoTracks());
 
-                        if (sec < accumulated + aDur) {
-                            return { sceneIndex: i, type: 'a' };
+                    let audioBuffer = null;
+                    let audioDestination = null;
+                    if (transitionAudioFile) {
+                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        audioBuffer = await audioContext.decodeAudioData(await transitionAudioFile.arrayBuffer());
+                        if (!audioBuffer.duration || !Number.isFinite(audioBuffer.duration)) {
+                            throw new Error('The transition audio file has an invalid duration.');
                         }
-                        accumulated += aDur;
+                        audioDestination = audioContext.createMediaStreamDestination();
+                        audioDestination.stream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
+                        if (audioContext.state === 'suspended') await audioContext.resume();
                     }
-                    const last = scenes.length - 1;
-                    return { sceneIndex: Math.max(0, last), type: 'a' };
-                }
 
-                let currentFrame = 0;
-                const exportStartTime = performance.now();
+                    recorder = new MediaRecorder(combinedStream, {
+                        mimeType: format.mime,
+                        videoBitsPerSecond: 5000000
+                    });
+                    recorder.ondataavailable = event => {
+                        if (event.data && event.data.size) chunks.push(event.data);
+                    };
+                    recorder.onerror = event => {
+                        const err = event.error || new Error('MediaRecorder error');
+                        if (recorder.state !== 'inactive') { try { recorder.stop(); } catch (_) {} }
+                        finish(err);
+                    };
+                    recorder.onstop = () => finish();
 
-                function renderLoop() {
-                    if (currentFrame < totalFrames) {
-                        const currentSec = currentFrame / fps;
-                        const active = getSceneAndTypeAtExactSec(currentSec);
-                        drawScenePreview(active.sceneIndex, active.type);
-                        currentFrame++;
-
-                        const percent = Math.min(100, Math.round((currentFrame / totalFrames) * 100));
-                        const elapsedMs = performance.now() - exportStartTime;
-                        const avgMsPerFrame = elapsedMs / currentFrame;
-                        const remainingFrames = totalFrames - currentFrame;
-                        const remainingSec = Math.max(0, (remainingFrames * avgMsPerFrame) / 1000);
-
-                        videoProgressText.innerText = `Rendering MP4 video... (${currentFrame}/${totalFrames} frames)`;
-                        videoProgressBar.style.width = `${percent}%`;
-                        videoProgressPercent.innerText = `${percent}%`;
-                        videoTimeRemaining.innerText = `Remaining: ~${remainingSec.toFixed(1)}s`;
-
-                        setTimeout(renderLoop, 1);
-                    } else {
-                        setTimeout(() => {
-                            if (mediaRecorder.state !== 'inactive') {
-                                mediaRecorder.stop();
-                            }
-                        }, 500);
+                    // Start the recorder first, then schedule audio relative to the AudioContext clock.
+                    recorder.start(1000);
+                    const startedAt = performance.now();
+                    if (audioBuffer && audioDestination) {
+                        let offset = 0;
+                        const audioStartTime = audioContext.currentTime + 0.06;
+                        for (const scene of exportScenes) {
+                            const source = audioContext.createBufferSource();
+                            source.buffer = audioBuffer;
+                            source.connect(audioDestination);
+                            source.start(audioStartTime + offset);
+                            sources.push(source);
+                            offset += scene.qDuration + scene.aDuration;
+                        }
                     }
+                    const render = now => {
+                        if (finalized) return;
+                        const elapsed = Math.min((now - startedAt) / 1000, duration);
+                        drawAt(elapsed);
+                        const percent = Math.min(99, Math.floor((elapsed / duration) * 100));
+                        videoProgressText.innerText = 'Recording video in real time...';
+                        videoProgressBar.style.width = percent + '%';
+                        videoProgressPercent.innerText = percent + '%';
+                        videoTimeRemaining.innerText = 'Remaining: ~' + Math.max(0, duration - elapsed).toFixed(1) + 's';
+                        if (elapsed < duration) rafId = requestAnimationFrame(render);
+                        else {
+                            // Give the encoder a moment to flush its final frame and audio packets.
+                            stopTimer = setTimeout(() => {
+                                if (recorder.state !== 'inactive') recorder.stop();
+                            }, 200);
+                        }
+                    };
+                    rafId = requestAnimationFrame(render);
+                } catch (error) {
+                    if (recorder && recorder.state !== 'inactive') {
+                        recorder.onstop = null;
+                        try { recorder.stop(); } catch (_) {}
+                    }
+                    await finish(error);
                 }
-
-                renderLoop();
             };
         }
     </script>
